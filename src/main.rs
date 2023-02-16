@@ -46,11 +46,11 @@ fn get_updates_count() -> u16 {
         .expect("failed to execute process");
     return match output.status.code() {
         Some(_code) => {
-            let str = String::from_utf8_lossy(&output.stdout).to_string();
-            if str == "" {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            if stdout == "" {
                 return 0;
             }
-            (str.split(" -> ").count() as u16) - 1
+            (stdout.split(" -> ").count() as u16) - 1
         }
         None => 0,
     };
