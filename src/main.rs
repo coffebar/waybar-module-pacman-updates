@@ -2,19 +2,19 @@ use std::io::Error;
 use std::process::Command;
 use std::{thread, time::Duration};
 
-const SLEEP_DURATION: Duration = Duration::from_secs(1);
-const REFRESH_TIMEOUT: u16 = 300;
+const SLEEP_SECONDS: u16 = 5;
+const SLEEP_DURATION: Duration = Duration::from_secs(SLEEP_SECONDS as u64);
 
 fn main() -> Result<(), Error> {
     thread::spawn(move || {
         sync_database();
     });
-
-    let mut sec: u16 = 0;
+    let mut iter: u16 = 0;
+    let update_on_iter = 300 / SLEEP_SECONDS;
     loop {
-        if sec >= REFRESH_TIMEOUT {
+        if iter >= update_on_iter {
             sync_database();
-            sec = 0;
+            iter = 0;
         }
         let updates = get_updates_count();
         if updates > 0 {
@@ -22,8 +22,7 @@ fn main() -> Result<(), Error> {
         } else {
             println!("{{\"text\": \"\", \"class\": \"updated\", \"alt\": \"updated\"}}",);
         }
-
-        sec += 1;
+        iter += 1;
         std::thread::sleep(SLEEP_DURATION);
     }
 }
