@@ -1,4 +1,3 @@
-use signal_hook::{consts::SIGHUP, iterator::Signals};
 use std::io::Error;
 use std::process::Command;
 use std::{thread, time::Duration};
@@ -7,14 +6,6 @@ const SLEEP_DURATION: Duration = Duration::from_secs(1);
 const REFRESH_TIMEOUT: u16 = 300;
 
 fn main() -> Result<(), Error> {
-    let mut signals = Signals::new(&[SIGHUP])?;
-    thread::spawn(move || {
-        for _sig in signals.forever() {
-            // use command below to refresh database immediately:
-            // pkill -SIGHUP -f 'waybar-module-pacman-updates'
-            sync_database();
-        }
-    });
     thread::spawn(move || {
         sync_database();
     });
