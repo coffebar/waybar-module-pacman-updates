@@ -1,5 +1,7 @@
 # waybar module for Arch to show system updates available
 
+![screenshot](https://raw.githubusercontent.com/coffebar/waybar-module-pacman-updates/main/screenshot.png)
+
 ## Reason
 
 #### Why not just exec `checkupdates` in custom waybar module? 
