@@ -32,7 +32,15 @@ This small program will give you fast updates with less network usage. After you
  ```
  - install nerd font to see icons or change icons as you like
 
- ### Building binary from source
+### Install from cargo crates
+
+```bash
+cargo install waybar-module-pacman-updates
+```
+
+Make sure you have `$HOME/.cargo/bin` in your *PATH* env variable.
+
+### Building binary from source
 
  ```bash
 rustup override set stable
