@@ -40,7 +40,7 @@ cargo install waybar-module-pacman-updates
 
 Make sure you have `$HOME/.cargo/bin` in your *PATH* env variable.
 
-### Building binary from source
+### Install from source
 
  ```bash
 rustup override set stable
