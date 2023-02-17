@@ -1,12 +1,10 @@
 [package]
 name = "waybar-module-pacman-updates"
 description = "waybar module for Arch to show system updates available"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-exclude = [
-  "screenshot.png",
-	"README.md"
-]
+exclude = ["target", "Cargo.lock", "screenshot.png"]
+readme = "README.md"
 repository = "https://github.com/coffebar/waybar-module-pacman-updates"
 license="GPL-3.0-or-later"
 keywords = ["cli", "waybar", "wayland", "linux", "archlinux"]
