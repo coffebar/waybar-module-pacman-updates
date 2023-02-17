@@ -54,3 +54,6 @@ cp target/release/waybar-module-pacman-updates ~/.local/bin/
 
 popd && rm -rf /tmp/waybar-module-pacman-updates
 ```
+
+Make sure you have `$HOME/.local/bin` in your *PATH* env variable.
+
