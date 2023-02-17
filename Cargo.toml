@@ -9,6 +9,7 @@ exclude = [
 ]
 repository = "https://github.com/coffebar/waybar-module-pacman-updates"
 license="GPL-3.0-or-later"
+keywords = ["cli", "waybar", "wayland", "linux", "archlinux"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
