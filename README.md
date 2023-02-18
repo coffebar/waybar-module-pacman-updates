@@ -40,6 +40,12 @@ cargo install waybar-module-pacman-updates
 
 Make sure you have `$HOME/.cargo/bin` in your *PATH* env variable.
 
+### Install from [AUR](https://aur.archlinux.org/packages/waybar-module-pacman-updates-git)
+
+```bash
+yay -S waybar-module-pacman-updates-git
+```
+
 ### Install from source
 
  ```bash
