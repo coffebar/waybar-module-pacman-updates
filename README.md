@@ -49,16 +49,7 @@ yay -S waybar-module-pacman-updates-git
 ### Install from source
 
  ```bash
-rustup override set stable
-rustup update stable
-
-git clone https://github.com/coffebar/waybar-module-pacman-updates.git /tmp/waybar-module-pacman-updates
-pushd /tmp/waybar-module-pacman-updates && cargo build --release
-
-mkdir -p ~/.local/bin/
-cp target/release/waybar-module-pacman-updates ~/.local/bin/
-
-popd && rm -rf /tmp/waybar-module-pacman-updates
+sh -c "$(wget -O- https://raw.githubusercontent.com/coffebar/waybar-module-pacman-updates/master/installer.sh)"
 ```
 
 Make sure you have `$HOME/.local/bin` in your *PATH* env variable.
