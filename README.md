@@ -1,6 +1,12 @@
 # waybar module for Arch to show system updates available
 
-![screenshot](https://raw.githubusercontent.com/coffebar/waybar-module-pacman-updates/main/screenshot.png)
+![screenshot](/screenshot.png)
+
+![](https://img.shields.io/aur/version/waybar-module-pacman-updates-git)
+![](https://img.shields.io/crates/v/waybar-module-pacman-updates)
+![](https://img.shields.io/aur/license/waybar-module-pacman-updates-git)
+![](https://img.shields.io/crates/d/waybar-module-pacman-updates)
+![](https://img.shields.io/github/issues-raw/coffebar/waybar-module-pacman-updates)
 
 ## Reason
 
