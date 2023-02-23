@@ -16,11 +16,12 @@ fn main() -> Result<(), Error> {
             sync_database();
             iter = 0;
         }
-        let updates = get_updates_count();
+        let (updates, stdout) = get_updates();
         if updates > 0 {
-            println!("{{\"text\": \"{}\", \"class\": \"has-updates\", \"alt\": \"has-updates\"}}", updates);
+            let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
+            println!( "{{\"text\": \"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
         } else {
-            println!("{{\"text\": \"\", \"class\": \"updated\", \"alt\": \"updated\"}}",);
+            println!("{{\"text\":\"\",\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}",);
         }
         iter += 1;
         std::thread::sleep(SLEEP_DURATION);
@@ -36,8 +37,8 @@ fn sync_database() {
         .expect("failed to execute process");
 }
 
-// get updates count without network operations
-fn get_updates_count() -> u16 {
+// get updates info without network operations
+fn get_updates() -> (u16, String) {
     // checkupdates --nosync --nocolor
     let output = Command::new("checkupdates")
         .args(["--nosync", "--nocolor"])
@@ -47,10 +48,10 @@ fn get_updates_count() -> u16 {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             if stdout == "" {
-                return 0;
+                return (0, "".to_string());
             }
-            (stdout.split(" -> ").count() as u16) - 1
+            return ((stdout.split(" -> ").count() as u16) - 1, stdout);
         }
-        None => 0,
+        None => (0, "".to_string()),
     };
 }

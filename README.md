@@ -15,6 +15,7 @@
 - This module will provide relevant local information constantly and periodically update data from the network in backgroud. Direct "checkupdates" will only give you one of two things: updating the information with a long delay or having the module constantly active on the network.
 - This module has 2 states which gives you the ability to display different icons depending on status.
 - Waybar expects JSON in an infinite loop from modules. So we have this.
+- See updates list in tooltip.
 
 This small program will give you fast updates with less network usage. After you have installed all the updates, the module will immediately go into the Updated state. You don't need to send signals to waybar to update this module state.
 
