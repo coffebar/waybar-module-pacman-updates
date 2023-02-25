@@ -37,7 +37,10 @@ This small program will give you fast updates with less network usage. After you
         "exec": "waybar-module-pacman-updates"
     }
  ```
- - install nerd font to see icons or change icons as you like
+ - add `"custom/updates"` to one of `modules-left`, `modules-center` or `modules-right`
+ - install nerd font to see icons or change icons as you like and restart waybar
+
+## installation options
 
 ### Install from cargo crates
 
