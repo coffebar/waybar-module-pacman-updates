@@ -55,6 +55,11 @@ Make sure you have `$HOME/.cargo/bin` in your *PATH* env variable.
 ```bash
 yay -S waybar-module-pacman-updates-git
 ```
+### Install from [Chaotic-AUR](https://github.com/chaotic-aur/packages/)waybar-module-pacman-updates-git)
+
+```bash
+pacman -S waybar-module-pacman-updates-git
+```
 
 ### Install from source
 
