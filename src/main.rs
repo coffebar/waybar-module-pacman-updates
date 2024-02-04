@@ -1,7 +1,11 @@
 use std::io::Error;
 use std::process::Command;
+use std::sync::Mutex;
 use std::{thread, time::Duration};
 
+lazy_static::lazy_static! {
+    static ref DATABASE_SYNC_MUTEX: Mutex<()> = Mutex::new(());
+}
 const SLEEP_SECONDS: u16 = 5;
 const SLEEP_DURATION: Duration = Duration::from_secs(SLEEP_SECONDS as u64);
 
@@ -30,6 +34,7 @@ fn main() -> Result<(), Error> {
 
 // check updates from network
 fn sync_database() {
+    let _lock = DATABASE_SYNC_MUTEX.lock().unwrap();
     // checkupdates --nocolor
     Command::new("checkupdates")
         .args(["--nocolor"])
