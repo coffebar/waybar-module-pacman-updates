@@ -34,7 +34,7 @@ This small program will give you fast updates with less network usage. After you
             "updated": "󰂪"
         },
         "exec-if": "which waybar-module-pacman-updates",
-        "exec": "waybar-module-pacman-updates"
+        "exec": "waybar-module-pacman-updates  --interval-seconds 5 --network-interval-seconds 300"
     }
  ```
  - add `"custom/updates"` to one of `modules-left`, `modules-center` or `modules-right`

@@ -1,3 +1,4 @@
+use std::env;
 use std::io::Error;
 use std::process::Command;
 use std::sync::Mutex;
@@ -7,14 +8,29 @@ lazy_static::lazy_static! {
     static ref DATABASE_SYNC_MUTEX: Mutex<()> = Mutex::new(());
 }
 const SLEEP_SECONDS: u16 = 5;
-const SLEEP_DURATION: Duration = Duration::from_secs(SLEEP_SECONDS as u64);
 
 fn main() -> Result<(), Error> {
     thread::spawn(move || {
         sync_database();
     });
     let mut iter: u16 = 0;
-    let update_on_iter = 300 / SLEEP_SECONDS;
+    let args: Vec<String> = env::args().collect();
+    let mut interval_seconds = SLEEP_SECONDS;
+    let mut network_interval_seconds = 300;
+    if args.len() > 1 {
+        for (i, arg) in args.iter().enumerate() {
+            if arg == "--interval-seconds" && i + 1 < args.len() {
+                interval_seconds = args[i + 1].parse().unwrap();
+            } else if arg == "--network-interval-seconds" && i + 1 < args.len() {
+                network_interval_seconds = args[i + 1].parse().unwrap();
+            }
+        }
+    }
+    let sleep_duration: Duration = Duration::from_secs(interval_seconds as u64);
+    if (interval_seconds == 0) || (network_interval_seconds == 0) {
+        panic!("interval-seconds and network-interval-seconds must be greater than 0");
+    }
+    let update_on_iter = network_interval_seconds / interval_seconds;
     loop {
         if iter >= update_on_iter {
             sync_database();
@@ -28,7 +44,7 @@ fn main() -> Result<(), Error> {
             println!("{{\"text\":\"{}\",\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}", updates);
         }
         iter += 1;
-        std::thread::sleep(SLEEP_DURATION);
+        std::thread::sleep(sleep_duration);
     }
 }
 
