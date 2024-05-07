@@ -9,6 +9,16 @@ lazy_static::lazy_static! {
 }
 const SLEEP_SECONDS: u16 = 5;
 
+fn display_help() {
+    println!("Usage: {} [options]", env::current_exe().unwrap().display());
+    println!();
+    println!("Options:");
+    println!("  --interval-seconds <seconds>  Set the interval between updates (default: 5)");
+    println!("  --network-interval-seconds <seconds>  Set the interval between network updates (default: 300)");
+    println!("  --no-zero-output                  Don't print '0' when there are no updates available");
+    println!();
+}
+
 fn main() -> Result<(), Error> {
     thread::spawn(move || {
         sync_database();
@@ -17,12 +27,17 @@ fn main() -> Result<(), Error> {
     let args: Vec<String> = env::args().collect();
     let mut interval_seconds = SLEEP_SECONDS;
     let mut network_interval_seconds = 300;
+    let mut clean_output = false;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
-            if arg == "--interval-seconds" && i + 1 < args.len() {
+            if arg == "--help" {
+                display_help(); return Ok(());
+            } else if arg == "--interval-seconds" && i + 1 < args.len() {
                 interval_seconds = args[i + 1].parse().unwrap();
             } else if arg == "--network-interval-seconds" && i + 1 < args.len() {
                 network_interval_seconds = args[i + 1].parse().unwrap();
+            } else if arg == "--no-zero-output" {
+                clean_output = true;
             }
         }
     }
@@ -41,7 +56,7 @@ fn main() -> Result<(), Error> {
             let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
         } else {
-            println!("{{\"text\":\"{}\",\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}", updates);
+            println!("{{\"text\":{},\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}", if clean_output {"\"\""} else {"\"0\""});
         }
         iter += 1;
         std::thread::sleep(sleep_duration);
