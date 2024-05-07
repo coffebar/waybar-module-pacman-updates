@@ -53,10 +53,10 @@ fn main() -> Result<(), Error> {
         }
         let (updates, stdout) = get_updates();
         if updates > 0 {
-            let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
+            let tooltip = stdout.trim_end().replace('"', "\\\"").replace('\n', "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
         } else {
-            println!("{{\"text\":{},\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}", if clean_output {"\"\""} else {"\"0\""});
+            println!("{{\"text\":{},\"tooltip\":\"System updated\",\"class\":\"updated\",\"alt\":\"updated\"}}", if clean_output {"\"\""} else {"\"0\""});
         }
         iter += 1;
         std::thread::sleep(sleep_duration);
@@ -83,11 +83,11 @@ fn get_updates() -> (u16, String) {
     return match output.status.code() {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            if stdout == "" {
-                return (0, "0".to_string());
+            if stdout.is_empty() {
+                return (0, '0'.to_string());
             }
             return ((stdout.split(" -> ").count() as u16) - 1, stdout);
         }
-        None => (0, "0".to_string()),
+        None => (0, '0'.to_string()),
     };
 }
