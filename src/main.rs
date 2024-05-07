@@ -15,7 +15,7 @@ fn display_help() {
     println!("Options:");
     println!("  --interval-seconds <seconds>  Set the interval between updates (default: 5)");
     println!("  --network-interval-seconds <seconds>  Set the interval between network updates (default: 300)");
-    println!("  --no-zero-output                  Don't print '0' when there are no updates available");
+    println!("  --no-zero-output              Don't print '0' when there are no updates available");
     println!();
 }
 
@@ -31,7 +31,8 @@ fn main() -> Result<(), Error> {
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
-                display_help(); return Ok(());
+                display_help();
+                return Ok(());
             } else if arg == "--interval-seconds" && i + 1 < args.len() {
                 interval_seconds = args[i + 1].parse().unwrap();
             } else if arg == "--network-interval-seconds" && i + 1 < args.len() {
