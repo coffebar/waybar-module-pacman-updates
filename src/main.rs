@@ -31,8 +31,7 @@ fn main() -> Result<(), Error> {
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
-                display_help();
-                return Ok(());
+                display_help(); return Ok(());
             } else if arg == "--interval-seconds" && i + 1 < args.len() {
                 interval_seconds = args[i + 1].parse().unwrap();
             } else if arg == "--network-interval-seconds" && i + 1 < args.len() {
@@ -57,12 +56,7 @@ fn main() -> Result<(), Error> {
             let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
         } else {
-            if clean_output {
-                println!("{{\"text\":\"\",\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}");
-            }
-            else {
-                println!("{{\"text\":\"0\",\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}");
-            }
+            println!("{{\"text\":{},\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}", if clean_output {"\"\""} else {"\"0\""});
         }
         iter += 1;
         std::thread::sleep(sleep_duration);
@@ -90,10 +84,10 @@ fn get_updates() -> (u16, String) {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             if stdout == "" {
-                return (0, String::from("0"));
+                return (0, "0".to_string());
             }
             return ((stdout.split(" -> ").count() as u16) - 1, stdout);
         }
-        None => (0, String::from("0")),
+        None => (0, "0".to_string()),
     };
 }
