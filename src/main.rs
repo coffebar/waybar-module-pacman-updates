@@ -33,9 +33,13 @@ fn main() -> Result<(), Error> {
                 display_help();
                 return Ok(());
             } else if arg == "--interval-seconds" && i + 1 < args.len() {
-                interval_seconds = args[i + 1].parse().unwrap();
+                interval_seconds = args[i + 1].parse().unwrap_or_else(|_|{
+                    panic!("--interval-seconds must be greater than 0!")
+                });
             } else if arg == "--network-interval-seconds" && i + 1 < args.len() {
-                network_interval_seconds = args[i + 1].parse().unwrap();
+                network_interval_seconds = args[i + 1].parse().unwrap_or_else(|_| {
+                    panic!("--network-interval-seconds must be greater than 0!")
+                });
             } else if arg == "--no-zero-output" {
                 clean_output = true;
             }
