@@ -84,10 +84,10 @@ fn get_updates() -> (u16, String) {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             if stdout.is_empty() {
-                return (0, '0'.to_string());
+                return (0, '0'.into());
             }
             return ((stdout.split(" -> ").count() as u16) - 1, stdout);
         }
-        None => (0, '0'.to_string()),
+        None => (0, '0'.into()),
     };
 }
