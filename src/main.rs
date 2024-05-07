@@ -7,7 +7,6 @@ use std::{thread, time::Duration};
 lazy_static::lazy_static! {
     static ref DATABASE_SYNC_MUTEX: Mutex<()> = Mutex::new(());
 }
-const SLEEP_SECONDS: u16 = 5;
 
 fn display_help() {
     println!("Usage: {} [options]", env::current_exe().unwrap().display());
@@ -25,7 +24,7 @@ fn main() -> Result<(), Error> {
     });
     let mut iter: u16 = 0;
     let args: Vec<String> = env::args().collect();
-    let mut interval_seconds = SLEEP_SECONDS;
+    let mut interval_seconds: u16 = 5;
     let mut network_interval_seconds = 300;
     let mut clean_output = false;
     if args.len() > 1 {
