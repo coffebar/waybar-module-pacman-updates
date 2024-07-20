@@ -22,10 +22,10 @@ fn main() -> Result<(), Error> {
     thread::spawn(move || {
         sync_database();
     });
-    let mut iter: u16 = 0;
+    let mut iter: u32 = 0;
     let args: Vec<String> = env::args().collect();
-    let mut interval_seconds: u16 = 5;
-    let mut network_interval_seconds = 300;
+    let mut interval_seconds: u32 = 5;
+    let mut network_interval_seconds: u32 = 300;
     let mut clean_output = false;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
