@@ -25,20 +25,53 @@ This small program will give you fast updates with less network usage. After you
  - install binary `waybar-module-pacman-updates` to your *PATH*
  - add to ~/.config/waybar/config 
 
- ```json
-    "custom/updates": {
-        "format": "{} {icon}",
-        "return-type": "json",
-        "format-icons": {
-            "has-updates": "󱍷",
-            "updated": "󰂪"
-        },
-        "exec-if": "which waybar-module-pacman-updates",
-        "exec": "waybar-module-pacman-updates  --interval-seconds 5 --network-interval-seconds 300"
-    }
- ```
+```json
+"custom/updates": {
+    "format": "{} {icon}",
+    "return-type": "json",
+    "format-icons": {
+        "has-updates": "󱍷",
+        "updated": "󰂪"
+    },
+    "exec-if": "which waybar-module-pacman-updates",
+    "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 300"
+}
+```
  - add `"custom/updates"` to one of `modules-left`, `modules-center` or `modules-right`
  - install nerd font to see icons or change icons as you like and restart waybar
+
+## Options
+
+`--no-zero-output` - don't print "0" if there are no updates available.
+
+`--interval-seconds` - interval to run checkupdates without network usage.
+
+`--network-interval-seconds` - interval to run checkupdates with network usage.
+
+### How to hide the module when there are no updates available
+
+##### waybar config
+
+```json
+"custom/updates": {
+    "format": "{} {icon}",
+    "return-type": "json",
+    "format-icons": {
+        "has-updates": "󱍷",
+        "updated": ""
+    },
+    "exec-if": "which waybar-module-pacman-updates",
+    "exec": "waybar-module-pacman-updates --no-zero-output"
+}
+```
+
+##### style.css
+
+```css
+#custom-updates {
+	background-color: transparent;
+}
+```
 
 ## installation options
 
