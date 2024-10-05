@@ -48,6 +48,8 @@ This small program will give you fast updates with less network usage. After you
 
 `--network-interval-seconds` - interval to run checkupdates with network usage.
 
+`--format-tooltip` - format tooltip to add padding.
+
 ### How to hide the module when there are no updates available
 
 ##### waybar config

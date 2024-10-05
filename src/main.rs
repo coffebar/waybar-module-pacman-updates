@@ -15,6 +15,7 @@ fn display_help() {
     println!("  --interval-seconds <seconds>  Set the interval between updates (default: 5)");
     println!("  --network-interval-seconds <seconds>  Set the interval between network updates (default: 300)");
     println!("  --no-zero-output              Don't print '0' when there are no updates available");
+    println!("  --format-tooltip              Format tooltip to add padding");
     println!();
 }
 
@@ -27,6 +28,7 @@ fn main() -> Result<(), Error> {
     let mut interval_seconds: u32 = 5;
     let mut network_interval_seconds: u32 = 300;
     let mut clean_output = false;
+    let mut format_tooltip = false;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
@@ -42,6 +44,8 @@ fn main() -> Result<(), Error> {
                 });
             } else if arg == "--no-zero-output" {
                 clean_output = true;
+            } else if arg == "--format-tooltip" {
+                format_tooltip = true;
             }
         }
     }
@@ -55,15 +59,36 @@ fn main() -> Result<(), Error> {
             sync_database();
             iter = 0;
         }
-        let (updates, stdout) = get_updates();
+        let (updates, mut stdout) = get_updates();
         if updates > 0 {
+            if format_tooltip {
+                let mut padding = [0; 4];
+                stdout
+                    .split_whitespace()
+                    .enumerate()
+                    .for_each(|(index, word)| {
+                        padding[index % 4] = padding[index % 4].max(word.len())
+                    });
+
+                stdout = stdout
+                    .split_whitespace()
+                    .enumerate()
+                    .map(|(index, word)| {
+                        word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                    })
+                    .collect::<Vec<String>>()
+                    .chunks(4)
+                    .map(|line| line.join(" "))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+            }
             let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
         } else {
             println!("{{\"text\":{},\"tooltip\":\"System updated\",\"class\": \"updated\",\"alt\":\"updated\"}}", if clean_output {"\"\""} else {"\"0\""});
         }
         iter += 1;
-        std::thread::sleep(sleep_duration);
+        thread::sleep(sleep_duration);
     }
 }
 
@@ -87,7 +112,7 @@ fn get_updates() -> (u16, String) {
     return match output.status.code() {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            if stdout == "" {
+            if stdout.is_empty() {
                 return (0, "0".to_string());
             }
             return ((stdout.split(" -> ").count() as u16) - 1, stdout);
