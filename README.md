@@ -48,7 +48,7 @@ This small program will give you fast updates with less network usage. After you
 
 `--network-interval-seconds` - interval to run checkupdates with network usage.
 
-`--format-tooltip` - format tooltip to add padding.
+`--tooltip-align-columns` - format tooltip as a table with left-aligned columns.
 
 ### How to hide the module when there are no updates available
 

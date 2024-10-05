@@ -15,7 +15,7 @@ fn display_help() {
     println!("  --interval-seconds <seconds>  Set the interval between updates (default: 5)");
     println!("  --network-interval-seconds <seconds>  Set the interval between network updates (default: 300)");
     println!("  --no-zero-output              Don't print '0' when there are no updates available");
-    println!("  --format-tooltip              Format tooltip to add padding");
+    println!("  --tooltip-align-columns       Format tooltip as a table with left-aligned columns");
     println!();
 }
 
@@ -28,7 +28,7 @@ fn main() -> Result<(), Error> {
     let mut interval_seconds: u32 = 5;
     let mut network_interval_seconds: u32 = 300;
     let mut clean_output = false;
-    let mut format_tooltip = false;
+    let mut tooltip_align = false;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
@@ -44,8 +44,8 @@ fn main() -> Result<(), Error> {
                 });
             } else if arg == "--no-zero-output" {
                 clean_output = true;
-            } else if arg == "--format-tooltip" {
-                format_tooltip = true;
+            } else if arg == "--tooltip-align-columns" {
+                tooltip_align = true;
             }
         }
     }
@@ -61,7 +61,7 @@ fn main() -> Result<(), Error> {
         }
         let (updates, mut stdout) = get_updates();
         if updates > 0 {
-            if format_tooltip {
+            if tooltip_align {
                 let mut padding = [0; 4];
                 stdout
                     .split_whitespace()
