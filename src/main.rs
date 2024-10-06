@@ -15,7 +15,7 @@ fn display_help() {
     println!("  --interval-seconds <seconds>  Set the interval between updates (default: 5)");
     println!("  --network-interval-seconds <seconds>  Set the interval between network updates (default: 300)");
     println!("  --no-zero-output              Don't print '0' when there are no updates available");
-    println!("  --tooltip-align-columns       Format tooltip as a table with left-aligned columns");
+    println!("  --tooltip-align-columns       Format tooltip as a table (sets font to monospace)");
     println!();
 }
 
@@ -81,6 +81,8 @@ fn main() -> Result<(), Error> {
                     .map(|line| line.join(" "))
                     .collect::<Vec<String>>()
                     .join("\n");
+                stdout.insert_str(0, "<span font-family='monospace'>");
+                stdout.push_str("</span>");
             }
             let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
