@@ -12,10 +12,10 @@ fn display_help() {
     println!("Usage: {} [options]", env::current_exe().unwrap().display());
     println!();
     println!("Options:");
-    println!("  --interval-seconds <seconds>  Set the interval between updates (default: 5)");
+    println!("  --interval-seconds <seconds>   Set the interval between updates (default: 5)");
     println!("  --network-interval-seconds <seconds>  Set the interval between network updates (default: 300)");
-    println!("  --no-zero-output              Don't print '0' when there are no updates available");
-    println!("  --tooltip-align-columns <font>Format tooltip as a table using given font (default: monospace)");
+    println!("  --no-zero-output               Don't print '0' when there are no updates available");
+    println!("  --tooltip-align-columns <font> Format tooltip as a table using given font (default: monospace)");
     println!();
 }
 
