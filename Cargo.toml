@@ -13,3 +13,4 @@ keywords = ["cli", "waybar", "wayland", "linux", "archlinux"]
 
 [dependencies]
 lazy_static = "1.4"
+lenient_semver = "0.4.2"
