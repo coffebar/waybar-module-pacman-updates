@@ -165,7 +165,7 @@ fn highlight_semantic_version(
                     colors[1]
                 } else if new_version.patch > old_version.patch {
                     colors[2]
-                } else if new_version.pre < old_version.pre {
+                } else if new_version.pre > old_version.pre {
                     colors[3]
                 } else {
                     colors[4]
