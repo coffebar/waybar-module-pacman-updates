@@ -8,6 +8,9 @@
 ![](https://img.shields.io/crates/d/waybar-module-pacman-updates)
 ![](https://img.shields.io/github/issues-raw/coffebar/waybar-module-pacman-updates)
 
+![custom styled popup](https://github.com/user-attachments/assets/40571cdf-1afc-4d54-8990-4a584083fd5f)
+
+
 ## Reason
 
 #### Why not just exec `checkupdates` in custom waybar module? 
