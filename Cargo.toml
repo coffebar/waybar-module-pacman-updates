@@ -16,6 +16,7 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+alpm = "4.0"
 lazy_static = "1.4"
 lenient_semver = "0.4.2"
 ureq = { version = "2.10", features = ["json"] }

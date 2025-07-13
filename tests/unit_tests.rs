@@ -14,13 +14,17 @@ fn test_version_comparison_git_revisions() {
     assert!(is_version_newer("r100.abc123-1", "r99.def456-1"));
     assert!(!is_version_newer("r99.abc123-1", "r100.def456-1"));
     assert!(!is_version_newer("r100.abc123-1", "r100.def456-1"));
+    assert!(is_version_newer(
+        "0.48.0.r62.gd775686-1",
+        "0.47.0.r63.ccdddddd-2"
+    ));
 }
 
 #[test]
 fn test_version_comparison_mixed() {
     assert!(is_version_newer("1.2.1-r50.abc123", "1.2.0"));
-    assert!(!is_version_newer("2.0.0", "r100.abc123-1")); // semantic vs git revision - should be false
-    assert!(is_version_newer("r101.abc123-1", "1.2.0")); // git revision vs semantic - string comparison
+    assert!(is_version_newer("2.0.0", "r100.abc123-1")); // ALPM: semantic version is newer than git revision
+    assert!(!is_version_newer("r101.abc123-1", "1.2.0")); // ALPM: git revision is older than semantic version
 }
 
 #[test]
