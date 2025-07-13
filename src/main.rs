@@ -1,11 +1,28 @@
+use serde::Deserialize;
 use std::env;
 use std::io::Error;
 use std::process::Command;
 use std::sync::Mutex;
-use std::{thread, time::Duration};
+use std::{thread, time::Duration, time::SystemTime};
+use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer};
+
+#[derive(Deserialize)]
+struct AurResponse {
+    results: Vec<AurPackage>,
+}
+
+#[derive(Deserialize)]
+struct AurPackage {
+    #[serde(rename = "Name")]
+    name: String,
+    #[serde(rename = "Version")]
+    version: String,
+}
 
 lazy_static::lazy_static! {
     static ref DATABASE_SYNC_MUTEX: Mutex<()> = Mutex::new(());
+    // AUR cache: (last_update_time, update_count, formatted_output)
+    static ref AUR_CACHE: Mutex<(Option<SystemTime>, u16, String)> = Mutex::new((None, 0, String::new()));
 }
 
 fn display_help() {
@@ -79,9 +96,19 @@ fn main() -> Result<(), Error> {
     loop {
         if iter >= update_on_iter {
             sync_database();
+            sync_aur_database(network_interval_seconds);
             iter = 0;
         }
-        let (updates, mut stdout) = get_updates();
+        let (pacman_updates, pacman_stdout) = get_updates();
+        let (aur_updates, aur_stdout) = get_aur_updates();
+        let updates = pacman_updates + aur_updates;
+        let mut stdout = if !aur_stdout.is_empty() && !pacman_stdout.is_empty() {
+            format!("{}\n{}", pacman_stdout, aur_stdout)
+        } else if !aur_stdout.is_empty() {
+            aur_stdout
+        } else {
+            pacman_stdout
+        };
         if updates > 0 {
             if tooltip_align {
                 let mut padding = [0; 4];
@@ -123,61 +150,6 @@ fn main() -> Result<(), Error> {
     }
 }
 
-fn highlight_semantic_version(
-    packages: String,
-    colors: [&str; 5],
-    padding: Option<[usize; 4]>,
-) -> String {
-    packages
-        .lines()
-        .map(|package| {
-            let fragments = package.split_whitespace().collect::<Vec<_>>();
-
-            let mut text = package.to_string();
-
-            if let Some(padding) = padding {
-                text = fragments
-                    .iter()
-                    .enumerate()
-                    .map(|(index, word)| {
-                        word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" ");
-            }
-
-            if fragments.len() != 4 {
-                // unknown format, so we skip formatting
-                return text;
-            }
-
-            let (Ok(old_version), Ok(new_version)) = (
-                lenient_semver::parse(fragments[1]),
-                lenient_semver::parse(fragments[3]),
-            ) else {
-                return text;
-            };
-
-            let color = {
-                if new_version.major > old_version.major {
-                    colors[0]
-                } else if new_version.minor > old_version.minor {
-                    colors[1]
-                } else if new_version.patch > old_version.patch {
-                    colors[2]
-                } else if new_version.pre > old_version.pre {
-                    colors[3]
-                } else {
-                    colors[4]
-                }
-            };
-
-            format!("<span color='#{}'>{}</span>", color, text)
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
 // check updates from network
 fn sync_database() {
     let _lock = DATABASE_SYNC_MUTEX.lock().unwrap();
@@ -186,6 +158,102 @@ fn sync_database() {
         .args(["--nocolor"])
         .output()
         .expect("failed to execute process");
+}
+
+// check AUR updates from network
+fn sync_aur_database(network_interval_seconds: u32) {
+    // Lock AUR cache to read/update: (last_update_time, update_count, formatted_output)
+    let mut cache = AUR_CACHE.lock().unwrap();
+    let now = SystemTime::now();
+
+    if let Some(last_update) = cache.0 {
+        if let Ok(elapsed) = now.duration_since(last_update) {
+            if elapsed.as_secs() < network_interval_seconds as u64 {
+                return;
+            }
+        }
+    }
+
+    // Get locally installed AUR packages
+    let output = Command::new("pacman").args(["-Qm"]).output();
+
+    if let Ok(output) = output {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let local_packages: Vec<(String, String)> = stdout
+            .lines()
+            .filter_map(|line| {
+                let mut parts = line.split_whitespace();
+                let name = parts.next()?.to_string();
+                let version = parts.next()?.to_string();
+                Some((name, version))
+            })
+            .collect();
+
+        if local_packages.is_empty() {
+            // No AUR packages installed, reset cache
+            cache.0 = Some(now); // Update cache timestamp
+            cache.1 = 0; // No updates available
+            cache.2 = String::new(); // Clear output
+            return;
+        }
+
+        // Query AUR API for updates
+        let package_names: Vec<&str> = local_packages
+            .iter()
+            .map(|(name, _)| name.as_str())
+            .collect();
+
+        match query_aur_api(&package_names) {
+            Ok(aur_packages) => {
+                let mut updates = Vec::new();
+
+                for (local_name, local_version) in &local_packages {
+                    if let Some(aur_pkg) = aur_packages.iter().find(|p| p.name == *local_name) {
+                        // Only show update if AUR version is actually newer
+                        if is_version_newer(&aur_pkg.version, local_version) {
+                            updates.push(format!(
+                                "{} {} -> {}",
+                                local_name, local_version, aur_pkg.version
+                            ));
+                        }
+                    }
+                }
+
+                let count = updates.len() as u16;
+                let stdout = updates.join("\n");
+
+                cache.0 = Some(now);
+                cache.1 = count;
+                cache.2 = stdout;
+            }
+            Err(_) => {
+                // AUR API failed (offline/error) - keep existing cache data but update timestamp
+                // to prevent repeated failed requests during this interval
+                cache.0 = Some(now);
+            }
+        }
+    }
+}
+
+fn query_aur_api(package_names: &[&str]) -> Result<Vec<AurPackage>, Box<dyn std::error::Error>> {
+    if package_names.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut url = "https://aur.archlinux.org/rpc/?v=5&type=info".to_string();
+    for name in package_names {
+        url.push_str(&format!("&arg[]={}", name));
+    }
+
+    let response: AurResponse = ureq::get(&url).call()?.into_json()?;
+    Ok(response.results)
+}
+
+// get AUR updates from cache
+fn get_aur_updates() -> (u16, String) {
+    // Lock AUR cache to read: (last_update_time, update_count, formatted_output)
+    let cache = AUR_CACHE.lock().unwrap();
+    (cache.1, cache.2.clone())
 }
 
 // get updates info without network operations
@@ -199,10 +267,10 @@ fn get_updates() -> (u16, String) {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             if stdout.is_empty() {
-                return (0, "0".to_string());
+                return (0, String::new());
             }
             ((stdout.split(" -> ").count() as u16) - 1, stdout)
         }
-        None => (0, "0".to_string()),
+        None => (0, String::new()),
     }
 }
