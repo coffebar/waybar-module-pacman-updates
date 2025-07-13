@@ -1,38 +1,15 @@
 pub mod version_utils {
+    use alpm::vercmp;
     use lenient_semver;
+    use std::cmp::Ordering;
 
-    // Helper function to compare versions properly
+    // Helper function to compare versions using ALPM's vercmp for production consistency
     pub fn is_version_newer(aur_version: &str, local_version: &str) -> bool {
-        // Handle git packages with revision numbers (e.g., "r89.fe26a90-1" or "-r89.fe26a90-1")
-        let extract_git_revision = |version: &str| -> Option<u32> {
-            if let Some(r_pos) = version.find('r') {
-                let after_r = &version[r_pos + 1..];
-                if let Some(dot_pos) = after_r.find('.') {
-                    if let Ok(rev) = after_r[..dot_pos].parse() {
-                        return Some(rev);
-                    }
-                }
-            }
-            None
-        };
-
-        // If both versions have git revision numbers, compare them
-        if let (Some(aur_rev), Some(local_rev)) = (
-            extract_git_revision(aur_version),
-            extract_git_revision(local_version),
-        ) {
-            return aur_rev > local_rev;
-        }
-
-        // Fall back to semantic version comparison
-        match (
-            lenient_semver::parse(aur_version),
-            lenient_semver::parse(local_version),
-        ) {
-            (Ok(aur_semver), Ok(local_semver)) => aur_semver > local_semver,
-            // If semantic parsing fails, fall back to string comparison
-            // but only show as update if strings are different (conservative approach)
-            _ => aur_version != local_version && aur_version > local_version,
+        // Use ALPM's vercmp which follows Arch Linux's official version comparison algorithm
+        // vercmp returns Ordering::Greater if aur_version is newer than local_version
+        match vercmp(aur_version, local_version) {
+            Ordering::Greater => true,
+            _ => false,
         }
     }
 
