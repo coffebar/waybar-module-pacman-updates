@@ -1,5 +1,7 @@
 # waybar module for Arch to show system updates available
 
+Shows updates from official repositories and AUR packages.
+
 ![screenshot](/screenshot.png)
 
 ![](https://img.shields.io/aur/version/waybar-module-pacman-updates-git)
@@ -19,6 +21,7 @@
 - This module has 2 states which gives you the ability to display different icons depending on status.
 - Waybar expects JSON in an infinite loop from modules. So we have this.
 - See updates list in tooltip.
+- **NEW**: Includes AUR packages updates (uses `pacman -Qm` + AUR API, no AUR helper required).
 
 This small program will give you fast updates with less network usage. After you have installed all the updates, the module will immediately go into the Updated state. You don't need to send signals to waybar to update this module state.
 
@@ -49,7 +52,7 @@ This small program will give you fast updates with less network usage. After you
 
 `--interval-seconds` - interval to run checkupdates without network usage.
 
-`--network-interval-seconds` - interval to run checkupdates with network usage.
+`--network-interval-seconds` - interval to run checkupdates and AUR updates with network usage.
 
 `--tooltip-align-columns` - format tooltip as a table using given monospaced font.
 
