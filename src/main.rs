@@ -34,6 +34,7 @@ fn display_help() {
     println!(
         "  --no-zero-output               Don't print '0' when there are no updates available"
     );
+    println!("  --no-aur                       Disable checking for AUR updates");
     println!("  --tooltip-align-columns <font> Format tooltip as a table using given font (default: monospace)");
     println!("  --color-semver-updates <colors> Check the difference of semantic versions and color them using the given colors.");
     println!("                                  The order of pango markup hex colors for colored updates is Major, Minor, Patch, Pre, Other.");
@@ -54,6 +55,7 @@ fn main() -> Result<(), Error> {
     let mut tooltip_font = "monospace";
     let mut color_semver_updates = false;
     let mut semver_updates_colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
+    let mut no_aur = false;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
@@ -69,6 +71,8 @@ fn main() -> Result<(), Error> {
                 });
             } else if arg == "--no-zero-output" {
                 clean_output = true;
+            } else if arg == "--no-aur" {
+                no_aur = true;
             } else if arg == "--tooltip-align-columns" {
                 tooltip_align = true;
                 if i + 1 < args.len() && args[i + 1][..1] != *"-" {
@@ -96,11 +100,17 @@ fn main() -> Result<(), Error> {
     loop {
         if iter >= update_on_iter {
             sync_database();
-            sync_aur_database(network_interval_seconds);
+            if !no_aur {
+                sync_aur_database(network_interval_seconds);
+            }
             iter = 0;
         }
         let (pacman_updates, pacman_stdout) = get_updates();
-        let (aur_updates, aur_stdout) = get_aur_updates();
+        let (aur_updates, aur_stdout) = if no_aur {
+            (0, String::new())
+        } else {
+            get_aur_updates()
+        };
         let updates = pacman_updates + aur_updates;
         let mut stdout = if !aur_stdout.is_empty() && !pacman_stdout.is_empty() {
             format!("{}\n{}", pacman_stdout, aur_stdout)

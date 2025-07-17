@@ -50,6 +50,8 @@ This small program will give you fast updates with less network usage. After you
 
 `--no-zero-output` - don't print "0" if there are no updates available.
 
+`--no-aur` - disable checking for AUR updates.
+
 `--interval-seconds` - interval to run checkupdates without network usage.
 
 `--network-interval-seconds` - interval to run checkupdates and AUR updates with network usage.

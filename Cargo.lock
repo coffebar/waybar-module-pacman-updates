@@ -692,7 +692,7 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "waybar-module-pacman-updates"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "alpm",
  "assert_cmd",
