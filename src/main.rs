@@ -50,6 +50,7 @@ fn main() -> Result<(), Error> {
     let mut interval_seconds: u32 = 5;
     let mut network_interval_seconds: u32 = 300;
     let mut clean_output = false;
+    let mut hide_aur = false;
     let mut tooltip_align = false;
     let mut tooltip_font = "monospace";
     let mut color_semver_updates = false;
@@ -69,6 +70,8 @@ fn main() -> Result<(), Error> {
                 });
             } else if arg == "--no-zero-output" {
                 clean_output = true;
+            } else if arg == "--hide-aur" {
+                hide_aur = true;
             } else if arg == "--tooltip-align-columns" {
                 tooltip_align = true;
                 if i + 1 < args.len() && args[i + 1][..1] != *"-" {
@@ -101,10 +104,10 @@ fn main() -> Result<(), Error> {
         }
         let (pacman_updates, pacman_stdout) = get_updates();
         let (aur_updates, aur_stdout) = get_aur_updates();
-        let updates = pacman_updates + aur_updates;
-        let mut stdout = if !aur_stdout.is_empty() && !pacman_stdout.is_empty() {
+        let updates = pacman_updates + if !hide_aur { aur_updates } else { 0 };
+        let mut stdout = if !hide_aur && !aur_stdout.is_empty() && !pacman_stdout.is_empty() {
             format!("{}\n{}", pacman_stdout, aur_stdout)
-        } else if !aur_stdout.is_empty() {
+        } else if !hide_aur && !aur_stdout.is_empty() {
             aur_stdout
         } else {
             pacman_stdout
