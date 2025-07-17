@@ -34,6 +34,7 @@ fn display_help() {
     println!(
         "  --no-zero-output               Don't print '0' when there are no updates available"
     );
+    println!("  --hide-aur                      Don't print available AUR updates");
     println!("  --tooltip-align-columns <font> Format tooltip as a table using given font (default: monospace)");
     println!("  --color-semver-updates <colors> Check the difference of semantic versions and color them using the given colors.");
     println!("                                  The order of pango markup hex colors for colored updates is Major, Minor, Patch, Pre, Other.");
