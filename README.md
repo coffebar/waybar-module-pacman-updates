@@ -21,7 +21,7 @@ Shows updates from official repositories and AUR packages.
 - This module has 2 states which gives you the ability to display different icons depending on status.
 - Waybar expects JSON in an infinite loop from modules. So we have this.
 - See updates list in tooltip.
-- **NEW**: Includes AUR packages updates (uses `pacman -Qm` + AUR API, no AUR helper required).
+- **NEW**: Includes AUR packages updates (uses `pacman -Qm` + `aur vercmp` from [aurutils](https://github.com/aurutils/aurutils)).
 
 This small program will give you fast updates with less network usage. After you have installed all the updates, the module will immediately go into the Updated state. You don't need to send signals to waybar to update this module state.
 
@@ -56,9 +56,9 @@ This small program will give you fast updates with less network usage. After you
 
 `--network-interval-seconds` - interval to run checkupdates and AUR updates with network usage.
 
-`--tooltip-align-columns` - format tooltip as a table using given monospaced font.
+`--tooltip-align-columns` - format tooltip as a table using given **monospaced font**.
 
-`--color-semver-updates` - color each package update in a color corresponding to the type of update (major, minor, patch, pre)
+`--color-semver-updates` - color each package update in a color corresponding to the type of update (major, minor, patch, pre, other)
 
 ### How to hide the module when there are no updates available
 
