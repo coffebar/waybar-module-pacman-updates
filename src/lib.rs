@@ -1,73 +1,168 @@
-pub mod version_utils {
-    use alpm::vercmp;
-    use lenient_semver;
-    use std::cmp::Ordering;
+use std::{
+    process::{Command, Stdio},
+    sync::LazyLock,
+};
 
-    // Helper function to compare versions using ALPM's vercmp for production consistency
-    pub fn is_version_newer(aur_version: &str, local_version: &str) -> bool {
-        // Use ALPM's vercmp which follows Arch Linux's official version comparison algorithm
-        // vercmp returns Ordering::Greater if aur_version is newer than local_version
-        match vercmp(aur_version, local_version) {
-            Ordering::Greater => true,
-            _ => false,
+use regex::Regex;
+
+#[derive(Debug)]
+pub enum UpdateType {
+    Major,
+    Minor,
+    Patch,
+    Pre,
+    Other,
+}
+#[derive(Debug)]
+pub struct Package {
+    pub name: String,
+    pub old_version: String,
+    pub new_version: String,
+    pub update_type: UpdateType,
+}
+
+impl Package {
+    fn determine_update_type(old_ver: &str, new_ver: &str) -> UpdateType {
+        let old_parsed = lenient_semver::parse(old_ver);
+        let new_parsed = lenient_semver::parse(new_ver);
+        match (old_parsed, new_parsed) {
+            (Ok(old), Ok(new)) => {
+                if new.major > old.major {
+                    UpdateType::Major
+                } else if new.minor > old.minor {
+                    UpdateType::Minor
+                } else if new.patch > old.patch {
+                    UpdateType::Patch
+                } else if new.pre > old.pre {
+                    UpdateType::Pre
+                } else {
+                    UpdateType::Other
+                }
+            }
+            _ => UpdateType::Other,
         }
-    }
-
-    pub fn highlight_semantic_version(
-        packages: String,
-        colors: [&str; 5],
-        padding: Option<[usize; 4]>,
-    ) -> String {
-        packages
-            .lines()
-            .map(|package| {
-                let fragments = package.split_whitespace().collect::<Vec<_>>();
-
-                let mut text = package.to_string();
-
-                if let Some(padding) = padding {
-                    text = fragments
-                        .iter()
-                        .enumerate()
-                        .map(|(index, word)| {
-                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" ");
-                }
-
-                if fragments.len() != 4 {
-                    // unknown format, so we skip formatting
-                    return text;
-                }
-
-                let (Ok(old_version), Ok(new_version)) = (
-                    lenient_semver::parse(fragments[1]),
-                    lenient_semver::parse(fragments[3]),
-                ) else {
-                    return text;
-                };
-
-                let color = {
-                    if new_version.major > old_version.major {
-                        colors[0]
-                    } else if new_version.minor > old_version.minor {
-                        colors[1]
-                    } else if new_version.patch > old_version.patch {
-                        colors[2]
-                    } else if new_version.pre > old_version.pre {
-                        colors[3]
-                    } else {
-                        colors[4]
-                    }
-                };
-
-                format!("<span color='#{}'>{}</span>", color, text)
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
     }
 }
 
-// Re-export for easier access
-pub use version_utils::{highlight_semantic_version, is_version_newer};
+// Compiled only once
+static PACKAGE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(\S+)\s+(\S+)\s+->\s+(\S+)$").expect("Failed to compile package regex")
+});
+
+impl TryFrom<String> for Package {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        let caps = PACKAGE_REGEX.captures(&s).ok_or_else(|| {
+            format!(
+                "Invalid format: expected 'name old_version -> new_version', got '{}'",
+                s
+            )
+        })?;
+
+        let name = caps[1].to_string();
+        let old_version = caps[2].to_string();
+        let new_version = caps[3].to_string();
+
+        let update_type = Package::determine_update_type(&old_version, &new_version);
+
+        Ok(Package {
+            name,
+            old_version,
+            new_version,
+            update_type,
+        })
+    }
+}
+
+pub trait IsPackageRepo {
+    fn local_updates(&mut self);
+    fn sync_updates(&mut self);
+    fn packages(&self) -> impl Iterator<Item = &Package>;
+}
+
+#[derive(Debug, Default)]
+pub struct OfficialRepo {
+    packages: Vec<Package>,
+}
+
+impl OfficialRepo {
+    fn common_updates(&mut self, sync: bool) {
+        let mut args = vec!["--nocolor"];
+        if !sync {
+            args.push("--nosync");
+        }
+        let output = Command::new("checkupdates").args(&args).output();
+        match output {
+            Ok(out) if out.status.success() => {
+                self.packages = String::from_utf8_lossy(&out.stdout)
+                    .lines()
+                    .filter_map(|line| Package::try_from(line.to_string()).ok())
+                    .collect();
+            }
+            Ok(_) => {}
+            Err(e) => eprintln!("Failed to check Official updates: {}", e),
+        }
+    }
+}
+
+impl IsPackageRepo for OfficialRepo {
+    fn local_updates(&mut self) {
+        self.common_updates(false);
+    }
+    fn sync_updates(&mut self) {
+        self.common_updates(true);
+    }
+    fn packages(&self) -> impl Iterator<Item = &Package> {
+        self.packages.iter()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct AURepo {
+    packages: Vec<Package>,
+}
+
+impl IsPackageRepo for AURepo {
+    fn local_updates(&mut self) {}
+    fn sync_updates(&mut self) {
+        let pacman = match Command::new("pacman")
+            .arg("-Qm")
+            .stdout(Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => child,
+            Err(e) => {
+                eprintln!("Failed to run pacman: {}", e);
+                return;
+            }
+        };
+
+        let output = Command::new("aur")
+            .arg("vercmp")
+            .stdin(pacman.stdout.unwrap())
+            .stdout(Stdio::piped())
+            .output();
+
+        match output {
+            Ok(out) if out.status.success() => {
+                self.packages = String::from_utf8_lossy(&out.stdout)
+                    .lines()
+                    .filter_map(|line| Package::try_from(line.to_string()).ok())
+                    .collect();
+            }
+            Ok(_) => {
+                eprintln!("aur vercmp exited with a non-zero status");
+            }
+            Err(e) => {
+                eprintln!(
+                    "Failed to check AUR updates (probably aurutils is not installed): {}",
+                    e
+                );
+            }
+        }
+    }
+    fn packages(&self) -> impl Iterator<Item = &Package> {
+        self.packages.iter()
+    }
+}
