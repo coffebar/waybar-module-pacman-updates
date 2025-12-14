@@ -77,6 +77,16 @@ This small program will give you fast updates with less network usage. After you
 }
 ```
 
+Or use this format if you want to show icon before the number of updates:
+
+```json
+...
+{
+	"format": "{icon} {0}",
+	...
+}
+```
+
 ##### style.css
 
 ```css
