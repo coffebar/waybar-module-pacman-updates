@@ -1,7 +1,7 @@
 [package]
 name = "waybar-module-pacman-updates"
 description = "waybar module for Arch to show system updates available"
-version = "0.2.9"
+version = "0.2.10"
 edition = "2021"
 exclude = ["target", "Cargo.lock", "screenshot.png"]
 readme = "README.md"
@@ -16,7 +16,7 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-alpm = "4.0"
+alpm = "5.0"
 lazy_static = "1.4"
 lenient_semver = "0.4.2"
 ureq = { version = "2.10", features = ["json"] }
