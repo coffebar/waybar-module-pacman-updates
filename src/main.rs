@@ -1,11 +1,20 @@
 use anyhow::Result;
 use clap::Parser;
+use clap::ValueEnum;
 use either::Either;
 use hex_color::HexColor;
 use tokio::select;
 use tokio::time::{interval, Duration};
 use ureq::json;
 use waybar_module_pacman_updates::{AURepo, IsPackageRepo, OfficialRepo, Package, UpdateType};
+
+
+#[derive(Clone, Debug, ValueEnum)]
+pub enum SortType {
+    Name,
+    Source,
+    UpdateType,
+}
 
 #[derive(Debug)]
 struct ColorScheme {
@@ -64,15 +73,17 @@ impl ColorScheme {
                 continue;
             }
 
-            let color_with_hash = if color_str.starts_with('#') {
+            let color_with_hash : String = if color_str.starts_with('#') {
                 color_str.to_string()
             } else {
                 format!("#{color_str}")
             };
 
-            match HexColor::parse(&color_with_hash) {
-                Ok(parsed) => **target = parsed,
-                Err(_) => eprintln!("Invalid color '{}', using default.", color_str),
+
+            if let Ok(parsed) = HexColor::parse(&color_with_hash) {
+                **target = parsed;
+            } else {
+                eprintln!("Invalid color '{}', using default.", color_str);
             }
         }
 
@@ -101,17 +112,34 @@ struct CliArgs {
     no_aur: bool,
 
     /// Align tooltip in columns with specified font
-    #[arg(long, value_name = "FONT",num_args=0..=1, default_missing_value = "monospace")]
+    #[arg(
+        long, 
+        value_name = "FONT", 
+        num_args(0..=1), 
+        default_missing_value = "monospace"
+    )]
     tooltip_align_columns: Option<String>,
 
     /// Color semantic version updates with custom colors (comma-separated: major,minor,patch,pre,other)
     #[arg(
-    long,
-    value_name = "COLORS",
-    num_args(0..=1),
-    default_missing_value = "ff0000,00ff00,0000ff,ff00ff,ffffff"
+        long,
+        value_name = "COLORS",
+        num_args(0..=1),
+        default_missing_value = "ff0000,00ff00,0000ff,ff00ff,ffffff"
     )]
     color_semver_updates: Option<String>,
+    
+    /// Defines the package sorting order in the tooltip
+    #[arg(
+        long,
+        short,
+        value_enum,
+        default_value_t = SortType::Name,
+        value_name = "SORT_TYPE",
+        ignore_case = true
+    )]
+    sort: SortType
+
 }
 
 #[derive(Debug)]
@@ -124,6 +152,7 @@ struct AppContext {
     tooltip_font: String,
     color_semver_updates: bool,
     colors: ColorScheme,
+    sort_type: SortType,
 
     official_repo: OfficialRepo,
     au_repo: AURepo,
@@ -151,12 +180,33 @@ impl AppContext {
             Either::Right(self.official_repo.packages().chain(self.au_repo.packages()))
         }
     }
+
+    fn packages_sorted(&self) -> Vec<&Package> {
+
+        let mut pkgs : Vec<&Package> = self.packages().collect();
+        match self.sort_type{
+            SortType::Name => {
+                pkgs.sort_by(|a, b| a.name.cmp(&b.name));
+            },
+            SortType::Source => { //Already done by self.packages
+            }
+           SortType::UpdateType => {
+                pkgs.sort_by(|a, b| {
+                    a.update_type.cmp(&b.update_type)
+                    .then_with(|| a.name.cmp(&b.name))
+    });
+}
+        }
+        pkgs
+
+    }
+
     fn tooltip(&self) -> String {
-        let pkgs: Vec<_> = self.packages().collect();
+        let pkgs: Vec<_> = self.packages_sorted();
         if pkgs.is_empty() {
             return "System updated".to_string();
         }
-
+    
         let mut tooltip = String::new();
         let (name_max_len, old_version_max_len) = if self.tooltip_align {
             let name_max = pkgs.iter().map(|p| p.name.len()).max().unwrap_or(0);
@@ -235,6 +285,7 @@ impl Default for AppContext {
             tooltip_font: "monospace".to_string(),
             color_semver_updates: false,
             colors: ColorScheme::default(),
+            sort_type: SortType::Name,
             official_repo: OfficialRepo::default(),
             au_repo: AURepo::default(),
         }
@@ -268,6 +319,8 @@ impl From<CliArgs> for AppContext {
             app_ctx.colors = ColorScheme::from_cli(&colors_str);
         }
 
+        app_ctx.sort_type = cli.sort;
+
         app_ctx
     }
 }
@@ -276,7 +329,7 @@ impl From<CliArgs> for AppContext {
 async fn main() -> Result<()> {
     let cli = CliArgs::parse();
     let mut app_ctx = AppContext::from(cli);
-
+    
     // First output to display something
     println!("{}", app_ctx.waybar_output());
 
@@ -300,7 +353,7 @@ async fn main() -> Result<()> {
                 app_ctx.sync_updates();
                 println!("{}", app_ctx.waybar_output());
 
-                // Reset local interval after syncn no double update
+                // Reset local interval after sync no double update
                 local_interval.reset();
             }
             _ = local_interval.tick() => {

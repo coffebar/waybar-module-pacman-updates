@@ -5,7 +5,7 @@ use std::{
 
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub enum UpdateType {
     Major,
     Minor,
@@ -13,6 +13,7 @@ pub enum UpdateType {
     Pre,
     Other,
 }
+
 #[derive(Debug)]
 pub struct Package {
     pub name: String,
