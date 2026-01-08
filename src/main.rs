@@ -125,7 +125,7 @@ fn main() -> Result<(), Error> {
         };
 
         if updates > 0 {
-            if !arrow_style.is_empty() {
+            if !arrow_style.is_empty() && arrow_style != "->" {
                 stdout = stdout.replace("->", arrow_style);
             }
 
