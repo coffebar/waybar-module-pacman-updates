@@ -1,16 +1,22 @@
+use regex::Regex;
 use std::{
     process::{Command, Stdio},
     sync::LazyLock,
 };
 
-use regex::Regex;
+use strum_macros::Display;
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Display, Ord, PartialOrd, Eq, PartialEq)]
 pub enum UpdateType {
+    #[strum(serialize = "major")]
     Major,
+    #[strum(serialize = "minor")]
     Minor,
+    #[strum(serialize = "patch")]
     Patch,
+    #[strum(serialize = "pre")]
     Pre,
+    #[strum(serialize = "other")]
     Other,
 }
 
@@ -152,7 +158,8 @@ impl IsPackageRepo for AURepo {
                     .filter_map(|line| Package::try_from(line.to_string()).ok())
                     .collect();
             }
-            Ok(_) => {
+            Ok(o) => {
+                eprintln!("{:?}", o);
                 eprintln!("aur vercmp exited with a non-zero status");
             }
             Err(e) => {

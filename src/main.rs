@@ -190,15 +190,14 @@ impl AppContext {
             },
             SortType::Source => { //Already done by self.packages
             }
-           SortType::UpdateType => {
+            SortType::UpdateType => {
                 pkgs.sort_by(|a, b| {
                     a.update_type.cmp(&b.update_type)
                     .then_with(|| a.name.cmp(&b.name))
-    });
-}
+                });
+            }
         }
         pkgs
-
     }
 
     fn tooltip(&self) -> String {
@@ -253,21 +252,25 @@ impl AppContext {
     }
 
     fn waybar_output(&self) -> String {
-        let count_pkg = self.packages().count();
-        if count_pkg == 0 && self.no_zero {
-            json!({
-                "text": "",
-                "tooltip": self.tooltip(),
-                "class": "updated",
-                "alt": "updated"
-            })
-            .to_string()
-        } else {
+        let pkgs = self.packages();
+        let count_pkg = pkgs.count();
+        let min_update_type_pkg = self.packages().min_by(|a, b| a.update_type.cmp(&b.update_type));
+
+        if let Some(pkg) = min_update_type_pkg {
             json!({
                 "text": count_pkg.to_string(),
                 "tooltip": self.tooltip(),
-                "class": if count_pkg > 0 { "has-updates" } else { "updated" },
-                "alt": if count_pkg > 0 { "has-updates" } else { "updated" }
+                "class": pkg.update_type.to_string(),
+                "alt": "has-updates"
+            })
+            .to_string()
+        } else {
+            // packages empty
+            json!({
+                "text": if self.no_zero {String::new()} else {count_pkg.to_string()},
+                "tooltip": self.tooltip(),
+                "class": "updated",
+                "alt": "updated"
             })
             .to_string()
         }
