@@ -39,6 +39,7 @@ fn display_help() {
     println!("  --color-semver-updates <colors> Check the difference of semantic versions and color them using the given colors.");
     println!("                                  The order of pango markup hex colors for colored updates is Major, Minor, Patch, Pre, Other.");
     println!("                                  (default: ff0000,00ff00,0000ff,ff00ff,ffffff)");
+    println!("  --arrow-style <symbol> Changes the style of the arrows, which are displayed between version updates.");
     println!();
 }
 
