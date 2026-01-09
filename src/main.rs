@@ -91,7 +91,9 @@ fn main() -> Result<(), Error> {
                         .for_each(|(index, color)| semver_updates_colors[index] = color);
                 }
             } else if arg == "--arrow-style" {
-                arrow_style = args[i + 1].as_str();
+                if i + 1 < args.len() {
+                    arrow_style = args[i + 1].as_str();
+                }
             }
         }
     }
@@ -125,7 +127,7 @@ fn main() -> Result<(), Error> {
         };
 
         if updates > 0 {
-            if !arrow_style.is_empty() && arrow_style != "->" {
+            if arrow_style != "->" {
                 stdout = stdout.replace("->", arrow_style);
             }
 
