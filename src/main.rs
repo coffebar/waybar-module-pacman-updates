@@ -39,6 +39,7 @@ fn display_help() {
     println!("  --color-semver-updates <colors> Check the difference of semantic versions and color them using the given colors.");
     println!("                                  The order of pango markup hex colors for colored updates is Major, Minor, Patch, Pre, Other.");
     println!("                                  (default: ff0000,00ff00,0000ff,ff00ff,ffffff)");
+    println!("  --arrow-style <symbol> Changes the style of the arrows, which are displayed between version updates.");
     println!();
 }
 
@@ -56,6 +57,7 @@ fn main() -> Result<(), Error> {
     let mut color_semver_updates = false;
     let mut semver_updates_colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
     let mut no_aur = false;
+    let mut arrow_style = "->";
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
@@ -89,6 +91,10 @@ fn main() -> Result<(), Error> {
                         .take(semver_updates_colors.len())
                         .for_each(|(index, color)| semver_updates_colors[index] = color);
                 }
+            } else if arg == "--arrow-style" {
+                if i + 1 < args.len() {
+                    arrow_style = args[i + 1].as_str();
+                }
             }
         }
     }
@@ -111,6 +117,7 @@ fn main() -> Result<(), Error> {
         } else {
             get_aur_updates()
         };
+
         let updates = pacman_updates + aur_updates;
         let mut stdout = if !aur_stdout.is_empty() && !pacman_stdout.is_empty() {
             format!("{}\n{}", pacman_stdout, aur_stdout)
@@ -119,7 +126,12 @@ fn main() -> Result<(), Error> {
         } else {
             pacman_stdout
         };
+
         if updates > 0 {
+            if arrow_style != "->" {
+                stdout = stdout.replace("->", arrow_style);
+            }
+
             if tooltip_align {
                 let mut padding = [0; 4];
                 stdout
