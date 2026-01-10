@@ -60,6 +60,8 @@ This small program will give you fast updates with less network usage. After you
 
 `--color-semver-updates` - color each package update in a color corresponding to the type of update (major, minor, patch, pre)
 
+`--arrow-style` - change the arrow symbols that are displayed between version updates.
+
 ### How to hide the module when there are no updates available
 
 ##### waybar config
