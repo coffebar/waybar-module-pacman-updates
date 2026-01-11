@@ -1,4 +1,4 @@
-use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer};
+use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer, override_columns_from_packages};
 
 #[test]
 fn test_version_comparison_semantic() {
@@ -82,4 +82,38 @@ fn test_highlight_semantic_version_with_padding() {
     assert!(result.len() > input_len); // Should be padded
 }
 
-// Here should be some tests for overwriting columns
+#[test]
+fn test_overwrite_columns() {
+    let input = "pkg 1.0.0 -> 1.1.0".to_string();
+    let overrides = ["808080", "dcdcdc", "d3d3d3", "c0c0c0"];
+    let result = override_columns_from_packages(input, overrides, None);
+
+    assert!(result.contains("span color='#808080'>pkg"));
+    assert!(result.contains("span color='#dcdcdc'>1.0.0"));
+    assert!(result.contains("span color='#d3d3d3'>->"));
+    assert!(result.contains("span color='#c0c0c0'>1.1.0"));
+}
+
+#[test]
+fn test_overwrite_columns_invalid_format() {
+    let input = "invalid format".to_string();
+    let overrides = ["808080", "dcdcdc", "d3d3d3", "c0c0c0"];
+    let result = override_columns_from_packages(input, overrides, None);
+
+    assert_eq!(result, "<span color='#808080'>invalid</span> <span color='#dcdcdc'>format</span>")
+}
+
+#[test]
+fn test_overwrite_columns_with_padding() {
+    let input = "pkg 1.0.0 -> 1.1.0".to_string();
+    let overrides = ["808080", "dcdcdc", "d3d3d3", "c0c0c0"];
+    let padding = Some([10, 10, 10, 10]);
+    let input_len = input.len();
+    let result = override_columns_from_packages(input, overrides, padding);
+
+    assert!(result.contains("span color='#808080'>pkg"));
+    assert!(result.contains("span color='#dcdcdc'>1.0.0"));
+    assert!(result.contains("span color='#d3d3d3'>->"));
+    assert!(result.contains("span color='#c0c0c0'>1.1.0"));
+    assert!(result.len() > input_len)
+}
