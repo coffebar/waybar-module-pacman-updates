@@ -41,7 +41,7 @@ fn display_help() {
     println!("                                  (default: ff0000,00ff00,0000ff,ff00ff,ffffff)");
     println!("  --column-color-overrides <overrides> Overwrites the color of a version column.");
     println!("                                       The column numbers are 1: package_name 2: previous_version 3: arrow 4: new_version.");
-    println!("                                       (default: ''");
+    println!("                                       Example: '1=ff0000,4=00ff00' (default: '')");
     println!("  --arrow-style <symbol> Changes the style of the arrows, which are displayed between version updates.");
     println!();
 }
@@ -60,7 +60,7 @@ fn main() -> Result<(), Error> {
     let mut color_semver_updates = false;
     let mut semver_updates_colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
     let mut override_column_colors = false;
-    let mut column_color_overrides = ["","","",""];
+    let mut column_color_overrides = ["", "", "", ""];
     let mut no_aur = false;
     let mut arrow_style = "->";
     if args.len() > 1 {
@@ -106,18 +106,22 @@ fn main() -> Result<(), Error> {
                         .enumerate()
                         .take(column_color_overrides.len())
                         .for_each(|(_index, color)| {
-                            let Some((unconverted_column_index, column_color)) = color.split_once("=") else {
-                                panic!("Problem encountered while decoding column overrides, please follow '<num>=<color>,...'")
+                            let Some((unconverted_column_index, column_color)) = color.split_once('=') else {
+                                panic!("Invalid column override format: '{}'. Expected format: '<num>=<color>' (e.g., '1=ff0000,3=00ff00')", color)
                             };
 
-                            let column_index: usize = unconverted_column_index.parse().unwrap();
-                            column_color_overrides[column_index-1] = column_color
+                            let column_index: usize = unconverted_column_index.parse()
+                                .unwrap_or_else(|_| panic!("Invalid column number '{}'. Must be a number between 1 and 4.", unconverted_column_index));
+
+                            if column_index == 0 || column_index > 4 {
+                                panic!("Column number '{}' is out of range. Valid columns are 1-4.", column_index);
+                            }
+
+                            column_color_overrides[column_index - 1] = column_color;
                         });
                 }
-            }else if arg == "--arrow-style" {
-                if i + 1 < args.len() {
-                    arrow_style = args[i + 1].as_str();
-                }
+            } else if arg == "--arrow-style" && i + 1 < args.len() {
+                arrow_style = args[i + 1].as_str();
             }
         }
     }
@@ -167,23 +171,21 @@ fn main() -> Result<(), Error> {
                 if color_semver_updates {
                     stdout =
                         highlight_semantic_version(stdout, semver_updates_colors, override_column_colors, column_color_overrides, Some(padding));
+                } else if override_column_colors {
+                    stdout =
+                        override_columns_from_packages(stdout, column_color_overrides, Some(padding));
                 } else {
-                    if override_column_colors {
-                        stdout =
-                            override_columns_from_packages(stdout, column_color_overrides, Some(padding))
-                    } else {
-                        stdout = stdout
-                            .split_whitespace()
-                            .enumerate()
-                            .map(|(index, word)| {
-                                word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                            })
-                            .collect::<Vec<String>>()
-                            .chunks(4)
-                            .map(|line| line.join(" "))
-                            .collect::<Vec<String>>()
-                            .join("\n")
-                    }
+                    stdout = stdout
+                        .split_whitespace()
+                        .enumerate()
+                        .map(|(index, word)| {
+                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                        })
+                        .collect::<Vec<String>>()
+                        .chunks(4)
+                        .map(|line| line.join(" "))
+                        .collect::<Vec<String>>()
+                        .join("\n");
                 }
 
                 stdout = format!("<span font-family='{}'>{}</span>", tooltip_font, stdout);
