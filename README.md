@@ -2,15 +2,13 @@
 
 Shows updates from official repositories and AUR packages.
 
-![screenshot](/screenshot.png)
+![screenshot](/screenshot.jpg)
 
 ![](https://img.shields.io/aur/version/waybar-module-pacman-updates-git)
 ![](https://img.shields.io/crates/v/waybar-module-pacman-updates)
 ![](https://img.shields.io/aur/license/waybar-module-pacman-updates-git)
 ![](https://img.shields.io/crates/d/waybar-module-pacman-updates)
 ![](https://img.shields.io/github/issues-raw/coffebar/waybar-module-pacman-updates)
-
-![custom styled popup](https://github.com/user-attachments/assets/40571cdf-1afc-4d54-8990-4a584083fd5f)
 
 
 ## Reason
