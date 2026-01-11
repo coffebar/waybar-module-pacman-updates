@@ -7,10 +7,7 @@ pub mod version_utils {
     pub fn is_version_newer(aur_version: &str, local_version: &str) -> bool {
         // Use ALPM's vercmp which follows Arch Linux's official version comparison algorithm
         // vercmp returns Ordering::Greater if aur_version is newer than local_version
-        match vercmp(aur_version, local_version) {
-            Ordering::Greater => true,
-            _ => false,
-        }
+        matches!(vercmp(aur_version, local_version), Ordering::Greater)
     }
 
     pub fn highlight_semantic_version(
@@ -28,17 +25,15 @@ pub mod version_utils {
 
                 if override_colors {
                     text = override_columns(text, overrides, padding);
-                } else {
-                    if let Some(padding) = padding {
-                        text = fragments
-                            .iter()
-                            .enumerate()
-                            .map(|(index, word)| {
-                                word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                            })
-                            .collect::<Vec<_>>()
-                            .join(" ");
-                    }
+                } else if let Some(padding) = padding {
+                    text = fragments
+                        .iter()
+                        .enumerate()
+                        .map(|(index, word)| {
+                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" ");
                 }
 
                 if fragments.len() != 4 {
@@ -79,29 +74,32 @@ pub mod version_utils {
         overrides: [&str; 4],
         padding: Option<[usize; 4]>,
     ) -> String {
-        let mut overwritten_text= text.to_string();
-
-        text.split_whitespace().enumerate().for_each(|(element_index, element)| {
-            let mut word: String = String::from(element);
-
-            if !overrides[element_index].is_empty() {
-                let color = overrides[element_index];
-
-                if let Some(padding) = padding {
-                    word.push_str(" ".repeat(padding[element_index % 4] - element.len()).as_str());
-                    overwritten_text = overwritten_text.replace(element, &format!("<span color='#{}'>{}</span>", color, word));
+        text.split_whitespace()
+            .enumerate()
+            .map(|(element_index, element)| {
+                // Apply padding if specified
+                let padded_element = if let Some(padding) = padding {
+                    format!(
+                        "{}{}",
+                        element,
+                        " ".repeat(padding[element_index % 4] - element.len())
+                    )
                 } else {
-                    overwritten_text = overwritten_text.replace(element, &format!("<span color='#{}'>{}</span>", color, element));
-                }
-            } else {
-                if let Some(padding) = padding {
-                    word.push_str(" ".repeat(padding[element_index % 4] - element.len()).as_str());
-                }
-                overwritten_text = overwritten_text.replace(element, &word);
-            }
-        });
+                    element.to_string()
+                };
 
-        overwritten_text
+                // Apply color override if specified
+                if !overrides[element_index].is_empty() {
+                    format!(
+                        "<span color='#{}'>{}</span>",
+                        overrides[element_index], padded_element
+                    )
+                } else {
+                    padded_element
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     pub fn override_columns_from_packages(
