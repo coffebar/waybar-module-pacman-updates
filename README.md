@@ -62,6 +62,8 @@ This small program will give you fast updates with less network usage. After you
 
 `--arrow-style` - change the arrow symbols that are displayed between version updates.
 
+`--column-color-overrides` - override the color of each of the four columns corresponding to (package, previous version, arrow, new version)
+
 ### How to hide the module when there are no updates available
 
 ##### waybar config
