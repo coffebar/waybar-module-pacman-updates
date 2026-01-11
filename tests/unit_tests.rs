@@ -31,7 +31,8 @@ fn test_version_comparison_mixed() {
 fn test_highlight_semantic_version_basic() {
     let input = "package 1.0.0 -> 1.1.0".to_string();
     let colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
-    let result = highlight_semantic_version(input, colors, None);
+    let overrides = ["", "", "", ""];
+    let result = highlight_semantic_version(input, colors, false, overrides, None);
 
     assert!(result.contains("span color='#00ff00'"));
     assert!(result.contains("package 1.0.0 -> 1.1.0"));
@@ -41,7 +42,8 @@ fn test_highlight_semantic_version_basic() {
 fn test_highlight_semantic_version_major() {
     let input = "package 1.0.0 -> 2.0.0".to_string();
     let colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
-    let result = highlight_semantic_version(input, colors, None);
+    let overrides = ["", "", "", ""];
+    let result = highlight_semantic_version(input, colors, false, overrides, None);
 
     assert!(result.contains("span color='#ff0000'"));
 }
@@ -50,7 +52,8 @@ fn test_highlight_semantic_version_major() {
 fn test_highlight_semantic_version_patch() {
     let input = "package 1.0.0 -> 1.0.1".to_string();
     let colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
-    let result = highlight_semantic_version(input, colors, None);
+    let overrides = ["", "", "", ""];
+    let result = highlight_semantic_version(input, colors, false, overrides, None);
 
     assert!(result.contains("span color='#0000ff'"));
 }
@@ -59,7 +62,8 @@ fn test_highlight_semantic_version_patch() {
 fn test_highlight_semantic_version_invalid_format() {
     let input = "invalid format".to_string();
     let colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
-    let result = highlight_semantic_version(input, colors, None);
+    let overrides = ["", "", "", ""];
+    let result = highlight_semantic_version(input, colors, false, overrides, None);
 
     assert_eq!(result, "invalid format");
     assert!(!result.contains("span"));
@@ -71,8 +75,11 @@ fn test_highlight_semantic_version_with_padding() {
     let colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
     let padding = Some([10, 10, 10, 10]);
     let input_len = input.len();
-    let result = highlight_semantic_version(input, colors, padding);
+    let overrides = ["", "", "", ""];
+    let result = highlight_semantic_version(input, colors, false, overrides, padding);
 
     assert!(result.contains("span color='#00ff00'"));
     assert!(result.len() > input_len); // Should be padded
 }
+
+// Here should be some tests for overwriting columns
