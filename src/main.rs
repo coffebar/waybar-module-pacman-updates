@@ -4,7 +4,7 @@ use std::io::Error;
 use std::process::Command;
 use std::sync::Mutex;
 use std::{thread, time::Duration, time::SystemTime};
-use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer};
+use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer, override_columns_from_packages};
 
 #[derive(Deserialize)]
 struct AurResponse {
@@ -39,6 +39,9 @@ fn display_help() {
     println!("  --color-semver-updates <colors> Check the difference of semantic versions and color them using the given colors.");
     println!("                                  The order of pango markup hex colors for colored updates is Major, Minor, Patch, Pre, Other.");
     println!("                                  (default: ff0000,00ff00,0000ff,ff00ff,ffffff)");
+    println!("  --column-color-overrides <overrides> Overwrites the color of a version column.");
+    println!("                                       The column numbers are 1: package_name 2: previous_version 3: arrow 4: new_version.");
+    println!("                                       (default: ''");
     println!("  --arrow-style <symbol> Changes the style of the arrows, which are displayed between version updates.");
     println!();
 }
@@ -56,6 +59,8 @@ fn main() -> Result<(), Error> {
     let mut tooltip_font = "monospace";
     let mut color_semver_updates = false;
     let mut semver_updates_colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
+    let mut override_column_colors = false;
+    let mut column_color_overrides = ["","","",""];
     let mut no_aur = false;
     let mut arrow_style = "->";
     if args.len() > 1 {
@@ -91,7 +96,25 @@ fn main() -> Result<(), Error> {
                         .take(semver_updates_colors.len())
                         .for_each(|(index, color)| semver_updates_colors[index] = color);
                 }
-            } else if arg == "--arrow-style" {
+            } else if arg == "--column-color-overrides" {
+                override_column_colors = true;
+                if i + 1 < args.len() && args[i + 1][..1] != *"-" {
+                    let overrides = args[i + 1].as_str();
+
+                    overrides
+                        .split(',')
+                        .enumerate()
+                        .take(column_color_overrides.len())
+                        .for_each(|(_index, color)| {
+                            let Some((unconverted_column_index, column_color)) = color.split_once("=") else {
+                                panic!("Problem encountered while decoding column overrides, please follow '<num>=<color>,...'")
+                            };
+
+                            let column_index: usize = unconverted_column_index.parse().unwrap();
+                            column_color_overrides[column_index-1] = column_color
+                        });
+                }
+            }else if arg == "--arrow-style" {
                 if i + 1 < args.len() {
                     arrow_style = args[i + 1].as_str();
                 }
@@ -143,24 +166,29 @@ fn main() -> Result<(), Error> {
 
                 if color_semver_updates {
                     stdout =
-                        highlight_semantic_version(stdout, semver_updates_colors, Some(padding));
+                        highlight_semantic_version(stdout, semver_updates_colors, override_column_colors, column_color_overrides, Some(padding));
                 } else {
-                    stdout = stdout
-                        .split_whitespace()
-                        .enumerate()
-                        .map(|(index, word)| {
-                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                        })
-                        .collect::<Vec<String>>()
-                        .chunks(4)
-                        .map(|line| line.join(" "))
-                        .collect::<Vec<String>>()
-                        .join("\n")
+                    if override_column_colors {
+                        stdout =
+                            override_columns_from_packages(stdout, column_color_overrides, Some(padding))
+                    } else {
+                        stdout = stdout
+                            .split_whitespace()
+                            .enumerate()
+                            .map(|(index, word)| {
+                                word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                            })
+                            .collect::<Vec<String>>()
+                            .chunks(4)
+                            .map(|line| line.join(" "))
+                            .collect::<Vec<String>>()
+                            .join("\n")
+                    }
                 }
 
                 stdout = format!("<span font-family='{}'>{}</span>", tooltip_font, stdout);
             } else if color_semver_updates {
-                stdout = highlight_semantic_version(stdout, semver_updates_colors, None);
+                stdout = highlight_semantic_version(stdout, semver_updates_colors, override_column_colors, column_color_overrides, None);
             }
             let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);

@@ -16,24 +16,29 @@ pub mod version_utils {
     pub fn highlight_semantic_version(
         packages: String,
         colors: [&str; 5],
+        override_colors: bool,
+        overrides: [&str; 4],
         padding: Option<[usize; 4]>,
     ) -> String {
         packages
             .lines()
             .map(|package| {
                 let fragments = package.split_whitespace().collect::<Vec<_>>();
-
                 let mut text = package.to_string();
 
-                if let Some(padding) = padding {
-                    text = fragments
-                        .iter()
-                        .enumerate()
-                        .map(|(index, word)| {
-                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" ");
+                if override_colors {
+                    text = override_columns(text, overrides, padding);
+                } else {
+                    if let Some(padding) = padding {
+                        text = fragments
+                            .iter()
+                            .enumerate()
+                            .map(|(index, word)| {
+                                word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                    }
                 }
 
                 if fragments.len() != 4 {
@@ -63,6 +68,52 @@ pub mod version_utils {
                 };
 
                 format!("<span color='#{}'>{}</span>", color, text)
+
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    pub fn override_columns(
+        text: String,
+        overrides: [&str; 4],
+        padding: Option<[usize; 4]>,
+    ) -> String {
+        let mut overwritten_text= text.to_string();
+
+        text.split_whitespace().enumerate().for_each(|(element_index, element)| {
+            let mut word: String = String::from(element);
+
+            if !overrides[element_index].is_empty() {
+                let color = overrides[element_index];
+
+                if let Some(padding) = padding {
+                    word.push_str(" ".repeat(padding[element_index % 4] - element.len()).as_str());
+                    overwritten_text = overwritten_text.replace(element, &format!("<span color='#{}'>{}</span>", color, word));
+                } else {
+                    overwritten_text = overwritten_text.replace(element, &format!("<span color='#{}'>{}</span>", color, element));
+                }
+            } else {
+                if let Some(padding) = padding {
+                    word.push_str(" ".repeat(padding[element_index % 4] - element.len()).as_str());
+                }
+                overwritten_text = overwritten_text.replace(element, &word);
+            }
+        });
+
+        overwritten_text
+    }
+
+    pub fn override_columns_from_packages(
+        packages: String,
+        overrides: [&str; 4],
+        padding: Option<[usize; 4]>,
+    ) -> String {
+        packages
+            .lines()
+            .map(|package| {
+                let text = package.to_string();
+                override_columns(text, overrides, padding)
             })
             .collect::<Vec<_>>()
             .join("\n")
@@ -70,4 +121,4 @@ pub mod version_utils {
 }
 
 // Re-export for easier access
-pub use version_utils::{highlight_semantic_version, is_version_newer};
+pub use version_utils::{highlight_semantic_version, is_version_newer, override_columns_from_packages};
