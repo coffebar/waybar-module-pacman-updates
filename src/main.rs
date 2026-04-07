@@ -182,7 +182,6 @@ impl AppContext {
     }
 
     fn packages_sorted(&self) -> Vec<&Package> {
-
         let mut pkgs : Vec<&Package> = self.packages().collect();
         match self.sort_type{
             SortType::Name => {

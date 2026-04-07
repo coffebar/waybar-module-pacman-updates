@@ -101,13 +101,22 @@ impl OfficialRepo {
         }
         let output = Command::new("checkupdates").args(&args).output();
         match output {
-            Ok(out) if out.status.success() => {
-                self.packages = String::from_utf8_lossy(&out.stdout)
-                    .lines()
-                    .filter_map(|line| Package::try_from(line.to_string()).ok())
-                    .collect();
+            Ok(out) => {
+                match out.status.code() {
+                    Some(0) => {
+                        /* success */
+                        self.packages = String::from_utf8_lossy(&out.stdout)
+                            .lines()
+                            .filter_map(|line| Package::try_from(line.to_string()).ok())
+                            .collect();
+                    }
+                    Some(2) => {
+                        /* empty */
+                        self.packages = Vec::new();
+                    }
+                    _ => {}
+                }
             }
-            Ok(_) => {}
             Err(e) => eprintln!("Failed to check Official updates: {}", e),
         }
     }
