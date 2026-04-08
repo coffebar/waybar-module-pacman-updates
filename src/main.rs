@@ -1,10 +1,13 @@
+mod checkupdates_lock;
 use serde::Deserialize;
 use std::env;
 use std::io::Error;
 use std::process::Command;
 use std::sync::Mutex;
 use std::{thread, time::Duration, time::SystemTime};
-use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer, override_columns_from_packages};
+use waybar_module_pacman_updates::{
+    highlight_semantic_version, is_version_newer, override_columns_from_packages,
+};
 
 #[derive(Deserialize)]
 struct AurResponse {
@@ -169,11 +172,19 @@ fn main() -> Result<(), Error> {
                     });
 
                 if color_semver_updates {
-                    stdout =
-                        highlight_semantic_version(stdout, semver_updates_colors, override_column_colors, column_color_overrides, Some(padding));
+                    stdout = highlight_semantic_version(
+                        stdout,
+                        semver_updates_colors,
+                        override_column_colors,
+                        column_color_overrides,
+                        Some(padding),
+                    );
                 } else if override_column_colors {
-                    stdout =
-                        override_columns_from_packages(stdout, column_color_overrides, Some(padding));
+                    stdout = override_columns_from_packages(
+                        stdout,
+                        column_color_overrides,
+                        Some(padding),
+                    );
                 } else {
                     stdout = stdout
                         .split_whitespace()
@@ -190,7 +201,13 @@ fn main() -> Result<(), Error> {
 
                 stdout = format!("<span font-family='{}'>{}</span>", tooltip_font, stdout);
             } else if color_semver_updates {
-                stdout = highlight_semantic_version(stdout, semver_updates_colors, override_column_colors, column_color_overrides, None);
+                stdout = highlight_semantic_version(
+                    stdout,
+                    semver_updates_colors,
+                    override_column_colors,
+                    column_color_overrides,
+                    None,
+                );
             }
             let tooltip = stdout.trim_end().replace("\"", "\\\"").replace("\n", "\\n");
             println!("{{\"text\":\"{}\",\"tooltip\":\"{}\",\"class\":\"has-updates\",\"alt\":\"has-updates\"}}", updates, tooltip);
@@ -205,11 +222,7 @@ fn main() -> Result<(), Error> {
 // check updates from network
 fn sync_database() {
     let _lock = DATABASE_SYNC_MUTEX.lock().unwrap();
-    // checkupdates --nocolor
-    Command::new("checkupdates")
-        .args(["--nocolor"])
-        .output()
-        .expect("failed to execute process");
+    let _ = checkupdates_lock::run_checkupdates_with_lock(&["--nocolor"]);
 }
 
 // check AUR updates from network
@@ -311,10 +324,7 @@ fn get_aur_updates() -> (u16, String) {
 // get updates info without network operations
 fn get_updates() -> (u16, String) {
     // checkupdates --nosync --nocolor
-    let output = Command::new("checkupdates")
-        .args(["--nosync", "--nocolor"])
-        .output()
-        .expect("failed to execute process");
+    let output = checkupdates_lock::run_checkupdates_with_lock(&["--nosync", "--nocolor"]);
     match output.status.code() {
         Some(_code) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();

@@ -63,7 +63,6 @@ pub mod version_utils {
                 };
 
                 format!("<span color='#{}'>{}</span>", color, text)
-
             })
             .collect::<Vec<_>>()
             .join("\n")
@@ -119,4 +118,6 @@ pub mod version_utils {
 }
 
 // Re-export for easier access
-pub use version_utils::{highlight_semantic_version, is_version_newer, override_columns_from_packages};
+pub use version_utils::{
+    highlight_semantic_version, is_version_newer, override_columns_from_packages,
+};

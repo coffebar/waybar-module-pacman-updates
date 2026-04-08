@@ -1,4 +1,6 @@
-use waybar_module_pacman_updates::{highlight_semantic_version, is_version_newer, override_columns_from_packages};
+use waybar_module_pacman_updates::{
+    highlight_semantic_version, is_version_newer, override_columns_from_packages,
+};
 
 #[test]
 fn test_version_comparison_semantic() {
@@ -100,7 +102,10 @@ fn test_overwrite_columns_invalid_format() {
     let overrides = ["808080", "dcdcdc", "d3d3d3", "c0c0c0"];
     let result = override_columns_from_packages(input, overrides, None);
 
-    assert_eq!(result, "<span color='#808080'>invalid</span> <span color='#dcdcdc'>format</span>")
+    assert_eq!(
+        result,
+        "<span color='#808080'>invalid</span> <span color='#dcdcdc'>format</span>"
+    )
 }
 
 #[test]
