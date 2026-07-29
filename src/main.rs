@@ -46,6 +46,7 @@ fn display_help() {
     println!("                                       The column numbers are 1: package_name 2: previous_version 3: arrow 4: new_version.");
     println!("                                       Example: '1=ff0000,4=00ff00' (default: '')");
     println!("  --arrow-style <symbol> Changes the style of the arrows, which are displayed between version updates.");
+    println!("  --max-version-length <chars> Limits the length of semver strings. Requires --tooltip-align-columns. (default: No limit)");
     println!();
 }
 
@@ -66,6 +67,7 @@ fn main() -> Result<(), Error> {
     let mut column_color_overrides = ["", "", "", ""];
     let mut no_aur = false;
     let mut arrow_style = "->";
+    let mut max_version_length: usize = usize::MAX;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
@@ -125,6 +127,11 @@ fn main() -> Result<(), Error> {
                 }
             } else if arg == "--arrow-style" && i + 1 < args.len() {
                 arrow_style = args[i + 1].as_str();
+            } else if arg == "--max-version-length" && i + 1 < args.len() {
+                max_version_length = args[i + 1].as_str().parse().unwrap_or_else(|_| {
+                    panic!("--max-version-length must be an integer greater than 4!")
+                });
+                max_version_length = max_version_length.max(4);
             }
         }
     }
@@ -170,6 +177,8 @@ fn main() -> Result<(), Error> {
                     .for_each(|(index, word)| {
                         padding[index % 4] = padding[index % 4].max(word.len())
                     });
+                padding[1] = padding[1].min(max_version_length);
+                padding[3] = padding[3].min(max_version_length);
 
                 if color_semver_updates {
                     stdout = highlight_semantic_version(
@@ -190,7 +199,12 @@ fn main() -> Result<(), Error> {
                         .split_whitespace()
                         .enumerate()
                         .map(|(index, word)| {
-                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                            let segment_padding = padding[index % 4];
+                            if word.len() <= segment_padding {
+                                word.to_string() + " ".repeat(segment_padding - word.len()).as_str()
+                            } else {
+                                word[..segment_padding.saturating_sub(3)].to_string() + "..."
+                            }
                         })
                         .collect::<Vec<String>>()
                         .chunks(4)

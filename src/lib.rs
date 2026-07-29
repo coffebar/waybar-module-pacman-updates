@@ -30,7 +30,12 @@ pub mod version_utils {
                         .iter()
                         .enumerate()
                         .map(|(index, word)| {
-                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
+                            let segment_padding = padding[index % 4];
+                            if word.len() <= segment_padding {
+                                word.to_string() + " ".repeat(segment_padding - word.len()).as_str()
+                            } else {
+                                word[..segment_padding.saturating_sub(3)].to_string() + "..."
+                            }
                         })
                         .collect::<Vec<_>>()
                         .join(" ");
@@ -78,11 +83,16 @@ pub mod version_utils {
             .map(|(element_index, element)| {
                 // Apply padding if specified
                 let padded_element = if let Some(padding) = padding {
-                    format!(
-                        "{}{}",
-                        element,
-                        " ".repeat(padding[element_index % 4] - element.len())
-                    )
+                    let segment_padding = padding[element_index % 4];
+                    if element.len() <= segment_padding {
+                        format!(
+                            "{}{}",
+                            element,
+                            " ".repeat(segment_padding - element.len())
+                        )
+                    } else {
+                        element[..segment_padding.saturating_sub(3)].to_string() + "..."
+                    }
                 } else {
                     element.to_string()
                 };
