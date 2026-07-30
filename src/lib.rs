@@ -10,6 +10,20 @@ pub mod version_utils {
         matches!(vercmp(aur_version, local_version), Ordering::Greater)
     }
 
+    // Pads a word with spaces to exactly `width` characters, or truncates it with a
+    // trailing "..." when it's longer. Counts characters, not bytes, so multi-byte
+    // input can neither panic on a slice boundary nor overflow the column.
+    pub fn pad_or_truncate(word: &str, width: usize) -> String {
+        let len = word.chars().count();
+        if len <= width {
+            format!("{}{}", word, " ".repeat(width - len))
+        } else if width <= 3 {
+            word.chars().take(width).collect()
+        } else {
+            word.chars().take(width - 3).collect::<String>() + "..."
+        }
+    }
+
     pub fn highlight_semantic_version(
         packages: String,
         colors: [&str; 5],
@@ -29,14 +43,7 @@ pub mod version_utils {
                     text = fragments
                         .iter()
                         .enumerate()
-                        .map(|(index, word)| {
-                            let segment_padding = padding[index % 4];
-                            if word.len() <= segment_padding {
-                                word.to_string() + " ".repeat(segment_padding - word.len()).as_str()
-                            } else {
-                                word[..segment_padding.saturating_sub(3)].to_string() + "..."
-                            }
-                        })
+                        .map(|(index, word)| pad_or_truncate(word, padding[index % 4]))
                         .collect::<Vec<_>>()
                         .join(" ");
                 }
@@ -83,16 +90,7 @@ pub mod version_utils {
             .map(|(element_index, element)| {
                 // Apply padding if specified
                 let padded_element = if let Some(padding) = padding {
-                    let segment_padding = padding[element_index % 4];
-                    if element.len() <= segment_padding {
-                        format!(
-                            "{}{}",
-                            element,
-                            " ".repeat(segment_padding - element.len())
-                        )
-                    } else {
-                        element[..segment_padding.saturating_sub(3)].to_string() + "..."
-                    }
+                    pad_or_truncate(element, padding[element_index % 4])
                 } else {
                     element.to_string()
                 };
@@ -129,5 +127,5 @@ pub mod version_utils {
 
 // Re-export for easier access
 pub use version_utils::{
-    highlight_semantic_version, is_version_newer, override_columns_from_packages,
+    highlight_semantic_version, is_version_newer, override_columns_from_packages, pad_or_truncate,
 };

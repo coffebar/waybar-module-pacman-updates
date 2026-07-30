@@ -1,5 +1,5 @@
 use waybar_module_pacman_updates::{
-    highlight_semantic_version, is_version_newer, override_columns_from_packages,
+    highlight_semantic_version, is_version_newer, override_columns_from_packages, pad_or_truncate,
 };
 
 #[test]
@@ -82,6 +82,70 @@ fn test_highlight_semantic_version_with_padding() {
 
     assert!(result.contains("span color='#00ff00'"));
     assert!(result.len() > input_len); // Should be padded
+}
+
+#[test]
+fn test_pad_or_truncate_pads_to_width() {
+    assert_eq!(pad_or_truncate("1.0.0", 8), "1.0.0   ");
+    assert_eq!(pad_or_truncate("1.0.0", 5), "1.0.0");
+    assert_eq!(pad_or_truncate("", 3), "   ");
+}
+
+#[test]
+fn test_pad_or_truncate_truncates_to_width() {
+    assert_eq!(pad_or_truncate("1.0.0.longsuffix", 10), "1.0.0.l...");
+    assert_eq!(pad_or_truncate("1.0.0", 4), "1...");
+}
+
+#[test]
+fn test_pad_or_truncate_multibyte() {
+    // Cutting by byte offset here would panic inside the arrow character
+    let word = "1.0.0→beta.longsuffix";
+    for width in 0..word.chars().count() + 3 {
+        assert_eq!(
+            pad_or_truncate(word, width).chars().count(),
+            width,
+            "width {} not respected",
+            width
+        );
+    }
+    assert_eq!(pad_or_truncate(word, 7), "1.0....");
+}
+
+#[test]
+fn test_pad_or_truncate_narrow_widths_never_overflow() {
+    // Widths below 4 have no room for the "..." marker and must hard truncate
+    for width in 0..=3 {
+        let result = pad_or_truncate("1.0.0.longsuffix", width);
+        assert_eq!(result.chars().count(), width, "width {} overflowed", width);
+    }
+}
+
+#[test]
+fn test_highlight_semantic_version_respects_narrow_padding() {
+    let input = "package-name 1.0.0.longsuffix -> 2.0.0.longsuffix".to_string();
+    let colors = ["ff0000", "00ff00", "0000ff", "ff00ff", "ffffff"];
+    let overrides = ["", "", "", ""];
+    let padding = [12, 7, 2, 7];
+    let result = highlight_semantic_version(input, colors, false, overrides, Some(padding));
+
+    // Drop the surrounding pango markup, if any, to inspect the bare columns
+    let line = match result.strip_prefix("<span") {
+        Some(rest) => rest
+            .split_once('>')
+            .map(|(_, body)| body)
+            .unwrap_or(&result)
+            .trim_end_matches("</span>"),
+        None => &result,
+    };
+    for (index, column) in line.split(' ').enumerate() {
+        assert!(
+            column.chars().count() <= padding[index % 4],
+            "column {} exceeds its budget: {:?}",
+            index,
+            column
+        );
+    }
 }
 
 #[test]
