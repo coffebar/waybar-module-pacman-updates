@@ -62,6 +62,16 @@ This small program will give you fast updates with less network usage. After you
 
 `--column-color-overrides` - override the color of each of the four columns corresponding to (package, previous version, arrow, new version)
 
+`--max-version-length` - limit how many characters a version column may take. Longer versions are truncated to end in `...`. Minimum 4, requires `--tooltip-align-columns`.
+
+Some packages carry version strings long enough to wrap the tooltip:
+
+<img width="640" alt="tooltip without --max-version-length" src="https://github.com/user-attachments/assets/d3483acf-8ff0-4ffe-8e28-ae2326659154" />
+
+The same updates with `--max-version-length 10`:
+
+<img width="563" alt="tooltip with --max-version-length 10" src="https://github.com/user-attachments/assets/ea2dfb95-4ed0-4917-8e13-3279482fa320" />
+
 ### How to hide the module when there are no updates available
 
 ##### waybar config

@@ -6,8 +6,11 @@ use std::process::Command;
 use std::sync::Mutex;
 use std::{thread, time::Duration, time::SystemTime};
 use waybar_module_pacman_updates::{
-    highlight_semantic_version, is_version_newer, override_columns_from_packages,
+    highlight_semantic_version, is_version_newer, override_columns_from_packages, pad_or_truncate,
 };
+
+// Shortest usable version column: 1 character plus the "..." marker
+const MIN_MAX_VERSION_LENGTH: usize = 4;
 
 #[derive(Deserialize)]
 struct AurResponse {
@@ -46,6 +49,7 @@ fn display_help() {
     println!("                                       The column numbers are 1: package_name 2: previous_version 3: arrow 4: new_version.");
     println!("                                       Example: '1=ff0000,4=00ff00' (default: '')");
     println!("  --arrow-style <symbol> Changes the style of the arrows, which are displayed between version updates.");
+    println!("  --max-version-length <chars> Limits the length of version strings (minimum: 4). Requires --tooltip-align-columns. (default: no limit)");
     println!();
 }
 
@@ -66,6 +70,7 @@ fn main() -> Result<(), Error> {
     let mut column_color_overrides = ["", "", "", ""];
     let mut no_aur = false;
     let mut arrow_style = "->";
+    let mut max_version_length: usize = usize::MAX;
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             if arg == "--help" {
@@ -125,12 +130,27 @@ fn main() -> Result<(), Error> {
                 }
             } else if arg == "--arrow-style" && i + 1 < args.len() {
                 arrow_style = args[i + 1].as_str();
+            } else if arg == "--max-version-length" && i + 1 < args.len() {
+                max_version_length = args[i + 1]
+                    .parse()
+                    .ok()
+                    .filter(|&length| length >= MIN_MAX_VERSION_LENGTH)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "Invalid --max-version-length '{}'. Must be an integer >= {}.",
+                            args[i + 1],
+                            MIN_MAX_VERSION_LENGTH
+                        )
+                    });
             }
         }
     }
     let sleep_duration: Duration = Duration::from_secs(interval_seconds as u64);
     if (interval_seconds == 0) || (network_interval_seconds == 0) {
         panic!("interval-seconds and network-interval-seconds must be greater than 0");
+    }
+    if max_version_length != usize::MAX && !tooltip_align {
+        eprintln!("Warning: --max-version-length has no effect without --tooltip-align-columns");
     }
     let update_on_iter = network_interval_seconds / interval_seconds;
     loop {
@@ -168,8 +188,10 @@ fn main() -> Result<(), Error> {
                     .split_whitespace()
                     .enumerate()
                     .for_each(|(index, word)| {
-                        padding[index % 4] = padding[index % 4].max(word.len())
+                        padding[index % 4] = padding[index % 4].max(word.chars().count())
                     });
+                padding[1] = padding[1].min(max_version_length);
+                padding[3] = padding[3].min(max_version_length);
 
                 if color_semver_updates {
                     stdout = highlight_semantic_version(
@@ -189,9 +211,7 @@ fn main() -> Result<(), Error> {
                     stdout = stdout
                         .split_whitespace()
                         .enumerate()
-                        .map(|(index, word)| {
-                            word.to_string() + " ".repeat(padding[index % 4] - word.len()).as_str()
-                        })
+                        .map(|(index, word)| pad_or_truncate(word, padding[index % 4]))
                         .collect::<Vec<String>>()
                         .chunks(4)
                         .map(|line| line.join(" "))
