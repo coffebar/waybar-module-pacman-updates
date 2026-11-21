@@ -709,6 +709,7 @@ dependencies = [
  "fs2",
  "lazy_static",
  "lenient_semver",
+ "libc",
  "predicates",
  "serde",
  "ureq",
