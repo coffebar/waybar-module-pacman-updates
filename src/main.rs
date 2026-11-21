@@ -54,6 +54,7 @@ fn display_help() {
 }
 
 fn main() -> Result<(), Error> {
+    ignore_realtime_signals();
     thread::spawn(move || {
         sync_database();
     });
@@ -238,6 +239,23 @@ fn main() -> Result<(), Error> {
         thread::sleep(sleep_duration);
     }
 }
+
+// Waybar and other process-name based signal senders can accidentally target
+// this binary because its name contains "waybar". Ignore real-time signals so
+// an unrelated Waybar module refresh cannot terminate this long-running stream.
+#[cfg(unix)]
+fn ignore_realtime_signals() {
+    let first = libc::SIGRTMIN();
+    let last = libc::SIGRTMAX();
+    for signal in first..=last {
+        unsafe {
+            libc::signal(signal, libc::SIG_IGN);
+        }
+    }
+}
+
+#[cfg(not(unix))]
+fn ignore_realtime_signals() {}
 
 // check updates from network
 fn sync_database() {
